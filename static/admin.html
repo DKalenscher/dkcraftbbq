@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DKCraftBBQ Admin</title>
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <meta name="robots" content="noindex, nofollow" />
+  <!-- X-Frame-Options via meta as belt-and-suspenders -->
+  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
+</head>
+<body>
+
+<!-- ══ Auth Screen ══════════════════════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="flame">🔥</div>
+      <h1>DKCraftBBQ</h1>
+      <p>Admin Panel</p>
+    </div>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="login-username">Username</label>
+        <input id="login-username" type="text" autocomplete="username" required />
+      </div>
+      <div class="form-group">
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" autocomplete="current-password" required />
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <input type="checkbox" id="remember-me" style="width:auto;margin:0" />
+        <label for="remember-me" style="margin:0;text-transform:none;letter-spacing:0;font-size:0.85rem;color:var(--text-muted)">Keep me signed in for 30 days</label>
+      </div>
+      <p id="login-error" class="form-error" style="display:none; margin-bottom:10px;"></p>
+      <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
+    </form>
+  </div>
+</div>
+
+<!-- ══ App ══════════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Top bar — always visible on all screen sizes -->
+  <div class="topbar">
+    <button class="topbar-toggle" id="sidebar-toggle" title="Toggle sidebar">☰</button>
+    <span class="topbar-title">🔥 DKCraftBBQ <span class="topbar-sub">Admin</span></span>
+  </div>
+
+  <div class="layout">
+
+    <!-- Sidebar overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-name sidebar-label">DKCraftBBQ</span>
+        <span class="brand-sub sidebar-label">Admin Panel</span>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Overview</div>
+        <button class="nav-item active" data-tab="dashboard">
+          <span class="icon">📊</span><span class="sidebar-label"> Dashboard</span>
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label sidebar-label">Content</div>
+        <button class="nav-item" data-tab="content">
+          <span class="icon">🔗</span><span class="sidebar-label"> Links &amp; Sections</span>
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label sidebar-label">Insights</div>
+        <button class="nav-item" data-tab="analytics">
+          <span class="icon">📈</span><span class="sidebar-label"> Analytics</span>
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label sidebar-label">Site</div>
+        <button class="nav-item" data-tab="customize">
+          <span class="icon">🎨</span><span class="sidebar-label"> Customize</span>
+        </button>
+        <button class="nav-item" data-tab="settings">
+          <span class="icon">⚙️</span><span class="sidebar-label"> Settings</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="nav-item" id="view-site-btn">
+          <span class="icon">👁️</span><span class="sidebar-label"> View Site</span>
+        </button>
+        <button class="nav-item" id="logout-btn">
+          <span class="icon">🚪</span><span class="sidebar-label"> Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="main-content">
+
+      <!-- ── Dashboard ───────────────────────────────────────────────────── -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <h2 class="page-title">Dashboard</h2>
+          <button class="btn btn-secondary btn-sm" id="refresh-dashboard-btn">↻ Refresh</button>
+        </div>
+
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card"><div class="stat-label">Total Visits</div><div class="stat-value" id="stat-total-visits">—</div></div>
+          <div class="stat-card"><div class="stat-label">Unique Visitors</div><div class="stat-value" id="stat-unique">—</div></div>
+          <div class="stat-card"><div class="stat-label">Total Clicks</div><div class="stat-value" id="stat-clicks">—</div></div>
+          <div class="stat-card"><div class="stat-label">Today's Visits</div><div class="stat-value" id="stat-today">—</div></div>
+          <div class="stat-card"><div class="stat-label">This Week</div><div class="stat-value" id="stat-week">—</div></div>
+          <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value" id="stat-month">—</div></div>
+        </div>
+
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="chart-title">Visits &amp; Clicks — Last 30 Days</div>
+            <canvas id="chart-trend" height="200"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Traffic Sources</div>
+            <canvas id="chart-sources" height="200"></canvas>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header"><div class="table-title">Top Links</div></div>
+          <table>
+            <thead><tr><th>Link</th><th style="text-align:right">Clicks</th></tr></thead>
+            <tbody id="top-links-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Content ─────────────────────────────────────────────────────── -->
+      <div class="page" id="page-content">
+        <div class="page-header">
+          <h2 class="page-title">Links &amp; Sections</h2>
+          <button class="btn btn-primary" id="add-section-btn">+ Add Section</button>
+        </div>
+
+        <div id="sections-editor">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ── Analytics ───────────────────────────────────────────────────── -->
+      <div class="page" id="page-analytics">
+        <div class="page-header">
+          <h2 class="page-title">Analytics</h2>
+          <div class="filter-bar">
+            <select id="analytics-range">
+              <option value="7">Last 7 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="365">Last year</option>
+            </select>
+            <a id="export-visits-btn" class="btn btn-secondary btn-sm">⬇ Visits CSV</a>
+            <a id="export-clicks-btn" class="btn btn-secondary btn-sm">⬇ Clicks CSV</a>
+          </div>
+        </div>
+
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="chart-title">Visits &amp; Clicks Trend</div>
+            <canvas id="chart-trend-analytics" height="200"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Traffic Sources</div>
+            <canvas id="chart-sources-analytics" height="200"></canvas>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+          <div class="table-card">
+            <div class="table-header"><div class="table-title">Top Countries</div></div>
+            <table>
+              <thead><tr><th>Country</th><th style="text-align:right">Visits</th></tr></thead>
+              <tbody id="geo-table"></tbody>
+            </table>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><div class="table-title">YouTube / UTM Campaigns</div></div>
+            <table>
+              <thead><tr><th>Campaign</th><th>Source</th><th style="text-align:right">Visits</th></tr></thead>
+              <tbody id="utm-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header"><div class="table-title">Top Links</div></div>
+          <table>
+            <thead><tr><th>Title</th><th style="text-align:right">Clicks</th></tr></thead>
+            <tbody id="top-links-analytics-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Customize ───────────────────────────────────────────────────── -->
+      <div class="page" id="page-customize">
+        <div class="page-header">
+          <h2 class="page-title">Customize</h2>
+          <button class="btn btn-primary" id="save-customize-btn">Save Changes</button>
+        </div>
+
+        <div class="customize-layout">
+          <div>
+            <div class="table-card" style="margin-bottom:18px">
+              <div class="table-header"><div class="table-title">Site Identity</div></div>
+              <div style="padding:18px">
+                <div class="form-group">
+                  <label>Site Title</label>
+                  <input type="text" id="c-site-title" maxlength="100" />
+                </div>
+                <div class="form-group">
+                  <label>Tagline</label>
+                  <input type="text" id="c-site-tagline" maxlength="200" />
+                </div>
+                <div class="form-group">
+                  <label>Logo</label>
+                  <div class="upload-area" id="logo-upload-area">
+                    <div style="font-size:32px">📷</div>
+                    <p>Click to upload logo (JPG, PNG, WebP, SVG — max 5MB)</p>
+                    <input type="file" id="logo-file-input" accept="image/*" style="display:none" />
+                  </div>
+                  <div id="logo-preview-wrap" style="margin-top:10px;display:none">
+                    <img id="logo-preview-img" style="max-height:80px;border-radius:8px;border:1px solid var(--border)" alt="Logo preview" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-card" style="margin-bottom:18px">
+              <div class="table-header"><div class="table-title">Colors</div></div>
+              <div style="padding:18px">
+                <div class="color-grid">
+                  <div class="color-field"><input type="color" id="c-primary" /><label>Primary</label></div>
+                  <div class="color-field"><input type="color" id="c-secondary" /><label>Secondary</label></div>
+                  <div class="color-field"><input type="color" id="c-accent" /><label>Accent</label></div>
+                  <div class="color-field"><input type="color" id="c-bg" /><label>Background</label></div>
+                  <div class="color-field"><input type="color" id="c-bg-end" /><label>BG Gradient End</label></div>
+                  <div class="color-field"><input type="color" id="c-text" /><label>Text</label></div>
+                  <div class="color-field"><input type="color" id="c-card-bg" /><label>Card BG</label></div>
+                </div>
+
+                <div class="form-group" style="margin-top:18px">
+                  <label>Background Style</label>
+                  <select id="c-bg-style">
+                    <option value="gradient">Gradient</option>
+                    <option value="solid">Solid Color</option>
+                    <option value="pattern">Pattern + Gradient</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-card">
+              <div class="table-header"><div class="table-title">Custom CSS</div></div>
+              <div style="padding:18px">
+                <div class="form-group">
+                  <label>Inject CSS into the public page</label>
+                  <textarea id="c-custom-css" rows="6" placeholder="/* your custom styles */"></textarea>
+                  <span class="form-hint">Advanced: overrides all other styles. Be careful.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live preview mini panel -->
+          <div>
+            <div class="preview-panel">
+              <div class="preview-label">Live Preview</div>
+              <div class="preview-frame" id="preview-frame">
+                <div style="text-align:center;padding:20px">
+                  <div id="prev-logo" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#E25822,#8B4513);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:24px">🔥</div>
+                  <div id="prev-title" style="font-weight:800;font-size:1.1rem">DKCraftBBQ</div>
+                  <div id="prev-tagline" style="font-size:0.78rem;opacity:.6;margin-top:4px">Gear I Actually Use</div>
+                </div>
+                <div style="padding:0 8px 16px">
+                  <div id="prev-card" style="background:#2a1f1a;border:1px solid rgba(226,88,34,0.2);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px">
+                    <div style="width:44px;height:44px;border-radius:6px;background:rgba(226,88,34,0.15);display:flex;align-items:center;justify-content:center;font-size:20px">🛒</div>
+                    <div>
+                      <div style="font-weight:600;font-size:0.88rem">Example Product</div>
+                      <div style="font-size:0.75rem;opacity:.55">Short description here</div>
+                    </div>
+                    <div style="margin-left:auto;color:#E25822">→</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Settings ─────────────────────────────────────────────────────── -->
+      <div class="page" id="page-settings">
+        <div class="page-header">
+          <h2 class="page-title">Settings</h2>
+        </div>
+
+        <div style="max-width:480px">
+          <div class="table-card">
+            <div class="table-header"><div class="table-title">Change Password</div></div>
+            <div style="padding:22px">
+              <form id="change-password-form">
+                <div class="form-group">
+                  <label>Current Password</label>
+                  <input type="password" id="pw-current" autocomplete="current-password" required />
+                </div>
+                <div class="form-group">
+                  <label>New Password</label>
+                  <input type="password" id="pw-new" autocomplete="new-password" required minlength="8" />
+                </div>
+                <div class="form-group">
+                  <label>Confirm New Password</label>
+                  <input type="password" id="pw-confirm" autocomplete="new-password" required />
+                </div>
+                <p id="pw-error" class="form-error" style="display:none;margin-bottom:10px"></p>
+                <p id="pw-success" style="display:none;margin-bottom:10px;color:var(--success);font-size:.85rem"></p>
+                <button type="submit" class="btn btn-primary">Update Password</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="table-card" style="margin-top:18px">
+            <div class="table-header"><div class="table-title">UTM Tracking Info</div></div>
+            <div style="padding:18px;font-size:0.85rem;color:var(--text-muted);line-height:1.7">
+              <p>Add UTM parameters to your link to track which video sent visitors.</p>
+              <br>
+              <p><strong style="color:var(--text)">Example YouTube video link:</strong></p>
+              <code style="background:var(--surface2);padding:6px 10px;border-radius:6px;display:block;margin:8px 0;word-break:break-all;font-size:0.78rem">
+                https://your-pi-ip/?utm_source=youtube&utm_campaign=smoked_brisket_guide&utm_medium=video
+              </code>
+              <p>The <code style="background:var(--surface2);padding:2px 6px;border-radius:4px">utm_campaign</code> value shows up in your Analytics → UTM Campaigns table.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main-content -->
+  </div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- ══ Modals ════════════════════════════════════════════════════════════════ -->
+
+<!-- Section modal -->
+<div class="modal-overlay" id="section-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="section-modal-title">Add Section</h3>
+      <button class="btn btn-ghost btn-icon" data-close-modal="section-modal">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="section-id" />
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" id="section-title-input" maxlength="200" required />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="section-desc-input" rows="2" maxlength="500"></textarea>
+      </div>
+      <div class="form-group toggle-row">
+        <label style="margin:0">Visible</label>
+        <label class="toggle">
+          <input type="checkbox" id="section-visible-input" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="section-modal">Cancel</button>
+      <button class="btn btn-primary" id="save-section-btn">Save Section</button>
+    </div>
+  </div>
+</div>
+
+<!-- Link modal -->
+<div class="modal-overlay" id="link-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="link-modal-title">Add Link</h3>
+      <button class="btn btn-ghost btn-icon" data-close-modal="link-modal">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="link-id" />
+      <input type="hidden" id="link-section-id" />
+
+      <div class="form-group">
+        <label>Amazon URL *</label>
+        <div style="display:flex;gap:8px">
+          <input type="url" id="link-url-input" placeholder="https://www.amazon.com/dp/..." style="flex:1" />
+          <button class="btn btn-secondary btn-sm" id="fetch-amazon-btn" style="flex-shrink:0;white-space:nowrap">
+            🔍 Fetch
+          </button>
+        </div>
+        <span class="form-hint">Paste your Amazon Associate link — your tag is preserved automatically.</span>
+      </div>
+
+      <div id="fetch-status" style="display:none;margin-bottom:14px;font-size:0.82rem;color:var(--text-muted)"></div>
+
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" id="link-title-input" maxlength="500" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="link-desc-input" rows="3" maxlength="1000"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Thumbnail Image URL</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="url" id="link-image-input" placeholder="https://..." style="flex:1" />
+          <img id="link-image-preview" style="width:48px;height:48px;border-radius:6px;object-fit:contain;background:var(--surface2);display:none;flex-shrink:0" alt="preview" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Section</label>
+        <select id="link-section-select"></select>
+      </div>
+      <div class="form-group toggle-row">
+        <label style="margin:0">Visible</label>
+        <label class="toggle">
+          <input type="checkbox" id="link-visible-input" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="link-modal">Cancel</button>
+      <button class="btn btn-primary" id="save-link-btn">Save Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm delete modal -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3 class="modal-title">Confirm Delete</h3>
+      <button class="btn btn-ghost btn-icon" data-close-modal="confirm-modal">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-message" style="color:var(--text-muted)">Are you sure?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close-modal="confirm-modal">Cancel</button>
+      <button class="btn btn-danger" id="confirm-delete-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Chart.js & SortableJS via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="/assets/js/admin.js"></script>
+</body>
+</html>
