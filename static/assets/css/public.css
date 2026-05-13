@@ -51,12 +51,13 @@ body.bg-pattern {
 }
 
 .site-logo {
+  display: block;
   width: 100px;
   height: 100px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid var(--primary);
-  margin-bottom: 16px;
+  margin: 0 auto 16px;
   box-shadow: 0 0 30px rgba(226, 88, 34, 0.35);
 }
 
