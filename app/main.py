@@ -16,7 +16,7 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -119,8 +119,17 @@ app.include_router(admin_analytics.router)
 app.include_router(admin_settings.router)
 app.include_router(amazon.router)
 
+async def _restart_service():
+    await asyncio.sleep(1)
+    env = {**os.environ, "DBUS_SESSION_BUS_ADDRESS": "unix:path=/run/user/1000/bus"}
+    await asyncio.create_subprocess_exec(
+        "systemctl", "--user", "restart", "dkcraftbbq.service",
+        env=env,
+    )
+
+
 @app.post("/webhook/github", include_in_schema=False)
-async def github_webhook(request: Request):
+async def github_webhook(request: Request, background_tasks: BackgroundTasks):
     secret = settings.WEBHOOK_SECRET
     if not secret:
         raise HTTPException(status_code=503, detail="WEBHOOK_SECRET not configured")
@@ -148,6 +157,9 @@ async def github_webhook(request: Request):
     )
     stdout, stderr = await proc.communicate()
     logging.getLogger(__name__).info("git pull: %s", stdout.decode().strip())
+
+    if proc.returncode == 0:
+        background_tasks.add_task(_restart_service)
 
     return {
         "status": "ok" if proc.returncode == 0 else "error",
