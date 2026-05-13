@@ -20,6 +20,8 @@ class Settings(BaseSettings):
 
     ALLOWED_ORIGINS: str = "http://localhost:8000"
 
+    WEBHOOK_SECRET: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
