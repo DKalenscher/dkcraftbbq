@@ -17,18 +17,20 @@ The signup band was taken off the site because nothing ever sent an email.
   still exists in the database (empty) and can be dropped or migrated.
 
 ### Curate the generated recipes
-33 recipes were written from TikTok captions; many have filled-in amounts and
-temps. Review each in Admin → Recipes (the "What was filled in" box lists exactly
-what was added) and untick **Needs review** when approved.
-- Highest priority (mostly written from scratch): Pastrami Rub, Galbi, Skirt
-  Steak Fajitas, Smoked Prime Rib Roast, Pork Belly Burnt Ends, Brisket Ramen,
-  Homemade Beef Tallow, Buffalo Chicken Lettuce Wraps, Picanha Ciabatta.
-- Then the pastrami brine/cure amounts (Smoked Brisket Pastrami, Kosher Pastrami).
-- Only recipes in a TikTok playlist are on the site now, so curating the ones
-  that are visible is enough.
-- Idea: add a "source" label (from caption / partly filled / written) and a
-  "Curated by me" checkbox to the admin Recipes tab.
+Only recipes in a TikTok playlist are on the site, so only those need curating
+(24 as of 2026-10-21, 19 still marked Needs review). Review each in Admin →
+Recipes (the "What was filled in" box lists exactly what was added) and untick
+**Needs review** when approved.
+- Highest priority (mostly written from scratch): Pastrami Rub, Galbi, Buffalo
+  Chicken Lettuce Wraps, and the pastrami brine/cure amounts (Smoked Brisket
+  Pastrami, Kosher Pastrami).
+- New auto-drafted recipe: Yakitori wings and veggie skewers. Fill in the actual
+  seasoning and marinade, and shorten the title.
 - Rewrite the About page in your own words.
+- Idea: a "Curated by me" checkbox and a source label (from caption / partly
+  filled / written) on the admin Recipes tab.
+- Idea: a way to un-skip a video Claude judged not to be a recipe (today it has
+  to be removed from the `tiktok_skipped_videos` site setting by hand).
 
 ## Housekeeping
 - **TikTok sync, Pi side** (`app/tiktok_sync.py`): cron every 3 hours
