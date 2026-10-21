@@ -5,6 +5,11 @@ the right section; move finished items to **Done** with the date.
 
 ## Up next
 
+### Ads (revisit at ~1,000 visits/month)
+Not worth it at current traffic. At ~1,000 monthly visits from US/UK/CA/AU/NZ,
+apply to Journey by Mediavine (you control placement, keep it to 1–2 ads per
+recipe); Raptive at 25,000 pageviews/month.
+
 ### Curate the generated recipes
 Only recipes in a TikTok playlist are on the site, so only those need curating
 (24 as of 2026-10-21, 19 still marked Needs review). Review each in Admin →
@@ -44,6 +49,10 @@ Recipes (the "What was filled in" box lists exactly what was added) and untick
   branch `v1-fallback` so pushes never change it.
 
 ## Done
+- 2026-10-21 — Analytics insights: Top Recipes (views per visit, prints), Top
+  Searches (with a "0 results" flag for recipes people want but the site lacks)
+  and Top Products (shop clicks), on the dashboard (30 days) and Analytics page
+  (date range). Page views now store `path`, `search`, `search_results`.
 - 2026-10-21 — SEO: Google Search Console (Domain property, sitemap submitted) and
   Bing Webmaster Tools (meta tag `msvalidate.01` in base.html) set up. Recipe
   structured data has ISO times; sitemap has lastmod; homepage has WebSite and
