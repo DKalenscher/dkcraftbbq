@@ -78,7 +78,7 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
 .menu-toggle { display: none; }
 .header-search { background: var(--plaster); border-top: 1px solid var(--line); padding: 14px 0; }
 .header-search .wrap { display: flex; gap: 10px; }
-.header-search input, .finder-search input, .subscribe-form input {
+.header-search input, .finder-search input {
   flex: 1; min-width: 0; font: 400 17px var(--sans); padding: 13px 16px;
   border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); color: var(--ink);
 }
@@ -90,7 +90,7 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
   border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 28px;
 }
 .sec-title { font: 700 clamp(28px, 4vw, 40px)/1.1 var(--serif); color: var(--charcoal); margin: 0; }
-.sec-title em, .finder-title em, .subscribe-title em, .watch-title em {
+.sec-title em, .finder-title em, .watch-title em {
   font: 400 1.15em/1 var(--brush); font-style: normal; color: var(--ember); letter-spacing: .01em;
 }
 .sec-link { font: 700 13px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; text-decoration: none; color: var(--ember); }
@@ -164,28 +164,6 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
 .pager-num:hover, .pager-btn:hover { border-color: var(--ember); color: var(--ember); }
 .pager-num.current { background: var(--ember); border-color: var(--ember); color: #fff; }
 .pager-gap { padding: 0 4px; color: var(--smoke); }
-
-/* ── Subscribe bands ─────────────────────────────────── */
-.subscribe { background: var(--plaster); padding: 52px 0; margin: 40px 0 0; border-block: 1px solid var(--line); }
-.subscribe-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
-.subscribe-title { font: 700 clamp(26px, 3.2vw, 34px)/1.15 var(--serif); margin: 0 0 6px; color: var(--charcoal); }
-.subscribe p { margin: 0; color: var(--smoke); }
-.subscribe-form { display: flex; flex-wrap: wrap; gap: 10px; }
-.subscribe-msg { flex-basis: 100%; min-height: 1.4em; font-size: 15px; }
-.subscribe-msg.ok { color: #2f6b3a; }
-.subscribe-msg.err { color: var(--ember); }
-.subscribe-smoke {
-  margin-top: 56px; background-color: var(--charcoal); color: var(--cream); border: 0;
-  background-image:
-    radial-gradient(ellipse at 15% 120%, rgb(157 33 35 / 55%), transparent 55%),
-    radial-gradient(ellipse at 85% -20%, rgb(181 131 44 / 25%), transparent 50%);
-  padding: 72px 0;
-}
-.subscribe-smoke .subscribe-title { color: var(--cream); }
-.subscribe-smoke .subscribe-title em { color: #e2574c; }
-.subscribe-smoke p { color: #cfc4b6; }
-.subscribe-smoke .subscribe-msg.ok { color: #9fd5a8; }
-.subscribe-smoke .subscribe-msg.err { color: #ff9a8f; }
 
 /* ── Seasonal ────────────────────────────────────────── */
 .seasonal { background: var(--paper); border-block: 1px solid var(--line); margin-top: 40px; padding-bottom: 40px; }
@@ -322,7 +300,6 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
   .mobile-nav a { padding: 11px 0; text-decoration: none; font: 700 15px var(--sans); letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
   .mobile-nav a.sub { font-weight: 600; text-transform: none; letter-spacing: 0; padding-left: 16px; color: var(--smoke); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
-  .subscribe-inner { grid-template-columns: 1fr; }
   .rc-cols { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
@@ -348,7 +325,7 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
   .footer-grid { grid-template-columns: 1fr; }
   .post-meta span + span::before { margin-right: 10px; }
   .finder { padding: 44px 0; }
-  .finder-search, .subscribe-form { flex-direction: column; }
+  .finder-search { flex-direction: column; }
 }
 
 /* ── Print: only the recipe card ─────────────────────── */

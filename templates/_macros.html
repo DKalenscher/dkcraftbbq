@@ -30,24 +30,6 @@
   </span>
 </a>
 {%- endmacro %}
-
-{% macro subscribe(id="subscribe", variant="") -%}
-<section class="subscribe {{ variant }}" {% if id %}id="{{ id }}"{% endif %} aria-labelledby="{{ id or 'sub' }}-h">
-  <div class="wrap subscribe-inner">
-    <div>
-      <h2 id="{{ id or 'sub' }}-h" class="subscribe-title">Get new recipes <em>hot off the smoker</em></h2>
-      <p>One email when a new cook goes up. No spam, unsubscribe anytime.</p>
-    </div>
-    <form class="subscribe-form" data-source="{{ id or variant }}" novalidate>
-      <label class="sr-only" for="{{ id or variant }}-email">Email address</label>
-      <input id="{{ id or variant }}-email" type="email" name="email" placeholder="Your email address" required autocomplete="email">
-      <button class="btn btn-ember" type="submit">Subscribe</button>
-      <p class="subscribe-msg" role="status" aria-live="polite"></p>
-    </form>
-  </div>
-</section>
-{%- endmacro %}
-
 {% macro pager(page, pages, base_path, extra_qs="") -%}
 {% if pages > 1 %}
 <nav class="pager" aria-label="Pagination">

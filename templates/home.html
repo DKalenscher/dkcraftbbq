@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import heading, card, video_tile, subscribe, pager %}
+{% from "_macros.html" import heading, card, video_tile, pager %}
 {% block content %}
 
 {% if featured %}
@@ -37,8 +37,6 @@
   {{ pager(1, total_pages, "/recipes") }}
 </section>
 {% endif %}
-
-{{ subscribe("subscribe") }}
 
 {% if popular %}
 <section class="wrap block" aria-label="Most watched recipes">
@@ -82,7 +80,5 @@
   </div>
 </section>
 {% endif %}
-
-{{ subscribe(None, "subscribe-smoke") }}
 
 {% endblock %}

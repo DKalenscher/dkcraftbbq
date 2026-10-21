@@ -8,11 +8,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
-from slowapi import Limiter
-from ..client_ip import client_ip
 from sqlalchemy import or_
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..content import CATEGORIES, category_name
@@ -20,7 +16,6 @@ from ..database import BASE_DIR, get_db
 from .. import models
 
 router = APIRouter(include_in_schema=False)
-limiter = Limiter(key_func=client_ip)
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # Starlette >= 0.29 takes (request, name, context); older releases take (name, context)
 _NEW_TEMPLATE_API = next(iter(inspect.signature(templates.TemplateResponse).parameters)) != "name"
@@ -276,28 +271,6 @@ def about_page(request: Request, db: Session = Depends(get_db)):
     return render("about.html", _ctx(
         request, db, recipe_count=recipe_count, video_count=video_count,
     ))
-
-
-class SubscribeRequest(BaseModel):
-    email: str
-    source: str | None = None
-
-
-_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-
-
-@router.post("/api/subscribe")
-@limiter.limit("10/minute")
-def subscribe(request: Request, body: SubscribeRequest, db: Session = Depends(get_db)):
-    email = body.email.strip().lower()
-    if len(email) > 320 or not _EMAIL_RE.match(email):
-        raise HTTPException(status_code=400, detail="Please enter a valid email address.")
-    db.add(models.Subscriber(email=email, source=(body.source or "")[:100]))
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()  # already subscribed — treat as success
-    return {"status": "ok"}
 
 
 @router.get("/sitemap.xml")

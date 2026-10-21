@@ -64,46 +64,6 @@
   toggle(document.querySelector(".menu-toggle"), document.getElementById("mobile-nav"));
   toggle(document.querySelector(".search-toggle"), document.getElementById("header-search"), "input");
 
-  // ── Footer "Subscribe" link scrolls to the nearest signup form
-  document.querySelectorAll("[data-scroll-subscribe]").forEach((a) => {
-    a.addEventListener("click", (e) => {
-      const target = document.querySelector(".subscribe");
-      if (!target) return;
-      e.preventDefault();
-      target.scrollIntoView({ behavior: "smooth" });
-      target.querySelector("input")?.focus({ preventScroll: true });
-    });
-  });
-
-  // ── Newsletter
-  document.querySelectorAll(".subscribe-form").forEach((form) => {
-    const msg = form.querySelector(".subscribe-msg");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = form.email.value.trim();
-      msg.className = "subscribe-msg";
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-        msg.textContent = "Please enter a valid email address.";
-        msg.classList.add("err");
-        return;
-      }
-      const btn = form.querySelector("button");
-      btn.disabled = true;
-      try {
-        const res = await post("/api/subscribe", { email, source: form.dataset.source || null });
-        if (!res.ok) throw new Error((await res.json()).detail || "Something went wrong.");
-        msg.textContent = "You're in! Watch your inbox for the next cook.";
-        msg.classList.add("ok");
-        form.reset();
-      } catch (err) {
-        msg.textContent = err.message || "Something went wrong. Try again in a minute.";
-        msg.classList.add("err");
-      } finally {
-        btn.disabled = false;
-      }
-    });
-  });
-
   // ── Print just the recipe card
   document.querySelectorAll("[data-print]").forEach((b) => {
     b.addEventListener("click", () => {

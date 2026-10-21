@@ -71,12 +71,3 @@ def update_recipe(
     db.commit()
     db.refresh(recipe)
     return _serialize(recipe)
-
-
-@router.get("/subscribers")
-def list_subscribers(db: Session = Depends(get_db), _: models.AdminUser = Depends(get_current_user)):
-    rows = db.query(models.Subscriber).order_by(models.Subscriber.created_at.desc()).all()
-    return [
-        {"email": s.email, "source": s.source, "created_at": s.created_at.isoformat() if s.created_at else None}
-        for s in rows
-    ]

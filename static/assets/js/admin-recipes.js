@@ -1,4 +1,4 @@
-// Recipes + subscribers tab for the admin panel (v2)
+// Recipes tab for the admin panel (v2)
 (() => {
   "use strict";
 
@@ -80,18 +80,6 @@
     } catch (err) {
       $("#recipes-list").innerHTML = `<p style="padding:22px">Failed to load recipes: ${esc(err.message)}</p>`;
     }
-    try {
-      const subs = await api("GET", "/api/admin/subscribers");
-      $("#subs-count").textContent = `Newsletter Subscribers (${subs.length})`;
-      $("#subs-list").innerHTML = subs.length
-        ? subs.map((s) => `<div class="sub-row"><span>${esc(s.email)}</span><span>${esc((s.created_at || "").slice(0, 10))}</span></div>`).join("")
-        : "<p>No subscribers yet.</p>";
-      $("#subs-export").onclick = () => {
-        navigator.clipboard.writeText(subs.map((s) => s.email).join("\n"));
-        $("#subs-export").textContent = "Copied!";
-        setTimeout(() => ($("#subs-export").textContent = "Copy emails"), 1500);
-      };
-    } catch (_) { /* subscribers are optional */ }
   }
 
   function openEditor(id) {

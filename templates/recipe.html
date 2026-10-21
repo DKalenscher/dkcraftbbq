@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import heading, card, subscribe %}
+{% from "_macros.html" import heading, card %}
 {% block title %}{{ r.title }} | DKCraftBBQ{% endblock %}
 {% block description %}{{ r.summary }}{% endblock %}
 {% block og_image %}{% if r.image %}<meta property="og:image" content="{{ site_url }}{{ r.image }}">{% endif %}{% endblock %}
@@ -99,5 +99,4 @@
   </section>
   {% endif %}
 </article>
-{{ subscribe("subscribe") }}
 {% endblock %}
