@@ -12,13 +12,13 @@
     {% endfor %}
   </ul>
   {% if recipes %}
-  <p class="result-count">{{ total }} recipe{{ '' if total == 1 else 's' }}</p>
+  <p class="result-count" data-results="{{ total }}">{{ total }} recipe{{ '' if total == 1 else 's' }}</p>
   <div class="grid grid-3">
     {% for r in recipes %}{{ card(r, "card-tall", lazy=loop.index > 3) }}{% endfor %}
   </div>
   {{ pager(page, pages, base_path, extra_qs) }}
   {% else %}
-  <div class="empty">
+  <div class="empty" data-results="0">
     <p>Nothing on the smoker for that one yet.</p>
     <a class="btn" href="/recipes">See all recipes</a>
   </div>

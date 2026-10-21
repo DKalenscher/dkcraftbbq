@@ -46,6 +46,9 @@ def category_name(slug: str) -> str:
 _ADDED_COLUMNS = [
     ("recipes", "in_playlist", "BOOLEAN NOT NULL DEFAULT 1"),
     ("videos", "playlist", "VARCHAR(100)"),
+    ("page_views", "path", "VARCHAR(300)"),
+    ("page_views", "search", "VARCHAR(200)"),
+    ("page_views", "search_results", "INTEGER"),
 ]
 
 

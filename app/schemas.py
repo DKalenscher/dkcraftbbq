@@ -126,6 +126,9 @@ class PageViewCreate(BaseModel):
     screen_height: Optional[int] = None
     session_id: Optional[str] = None
     user_agent: Optional[str] = None
+    path: Optional[str] = None
+    search: Optional[str] = None
+    search_results: Optional[int] = None
 
 
 class LinkClickCreate(BaseModel):

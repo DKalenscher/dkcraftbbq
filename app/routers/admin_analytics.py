@@ -203,6 +203,87 @@ def get_traffic_sources(
     return [schemas.TrafficSource(source=k, count=v) for k, v in top]
 
 
+@router.get("/top-recipes")
+def get_top_recipes(
+    days: int = Query(default=30, ge=1, le=365),
+    limit: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _: models.AdminUser = Depends(get_current_user),
+):
+    """Recipe pages by visits (one per visit, however many times it was reloaded), plus prints."""
+    start = datetime.utcnow() - timedelta(days=days)
+    rows = (
+        db.query(VISIT_KEY.label("visit"), models.PageView.path)
+        .filter(models.PageView.timestamp >= start, models.PageView.path.like("/recipe/%"))
+        .all()
+    )
+    views: dict[str, set] = {}
+    prints: dict[str, set] = {}
+    for r in rows:
+        parts = r.path.strip("/").split("/")  # ["recipe", slug] or ["recipe", slug, "print"]
+        if len(parts) < 2:
+            continue
+        bucket = prints if parts[-1] == "print" else views
+        bucket.setdefault(parts[1], set()).add(r.visit)
+    titles = dict(db.query(models.Recipe.slug, models.Recipe.title).all())
+    out = [
+        {"slug": slug, "title": titles.get(slug, slug), "views": len(views.get(slug, ())),
+         "prints": len(prints.get(slug, ()))}
+        for slug in set(views) | set(prints) if slug in titles
+    ]
+    out.sort(key=lambda r: (r["views"], r["prints"]), reverse=True)
+    return out[:limit]
+
+
+@router.get("/top-searches")
+def get_top_searches(
+    days: int = Query(default=30, ge=1, le=365),
+    limit: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _: models.AdminUser = Depends(get_current_user),
+):
+    """Recipe search terms by how many visits searched them, with the result count
+    (0 results = a recipe people are looking for that the site doesn't have)."""
+    start = datetime.utcnow() - timedelta(days=days)
+    rows = (
+        db.query(VISIT_KEY.label("visit"), models.PageView.search, models.PageView.search_results)
+        .filter(models.PageView.timestamp >= start, models.PageView.search != None)
+        .order_by(models.PageView.timestamp)
+        .all()
+    )
+    terms: dict[str, dict] = {}
+    for r in rows:
+        t = terms.setdefault(r.search, {"term": r.search, "visits": set(), "results": None})
+        t["visits"].add(r.visit)
+        t["results"] = r.search_results  # most recent count wins
+    out = [{"term": t["term"], "searches": len(t["visits"]), "results": t["results"]} for t in terms.values()]
+    out.sort(key=lambda r: r["searches"], reverse=True)
+    return out[:limit]
+
+
+@router.get("/top-products")
+def get_top_products(
+    days: int = Query(default=30, ge=1, le=365),
+    limit: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _: models.AdminUser = Depends(get_current_user),
+):
+    """Shop link clicks in the period (every click counts)."""
+    start = datetime.utcnow() - timedelta(days=days)
+    rows = (
+        db.query(models.Link.title, models.Section.title.label("section"), models.Link.url,
+                 func.count(models.LinkClick.id).label("clicks"))
+        .join(models.LinkClick, models.LinkClick.link_id == models.Link.id)
+        .join(models.Section, models.Section.id == models.Link.section_id)
+        .filter(models.LinkClick.timestamp >= start)
+        .group_by(models.Link.id)
+        .order_by(func.count(models.LinkClick.id).desc())
+        .limit(limit)
+        .all()
+    )
+    return [{"title": r.title, "section": r.section, "url": r.url, "clicks": r.clicks} for r in rows]
+
+
 @router.get("/geo", response_model=list[schemas.GeoStat])
 def get_geo_stats(
     days: int = Query(default=30, ge=1, le=365),

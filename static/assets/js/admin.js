@@ -178,14 +178,42 @@
     closeModal("confirm-modal");
   });
 
+  // ── Insight tables (top recipes / searches / products) ────────────────────────
+  function fillTable(id, rows, cells, empty) {
+    const cols = document.getElementById(id).closest("table").querySelectorAll("th").length;
+    document.getElementById(id).innerHTML = rows.length
+      ? rows.map(r => `<tr>${cells(r).map((c, i) =>
+          `<td${i ? ' style="text-align:right"' : ""}>${c}</td>`).join("")}</tr>`).join("")
+      : `<tr><td colspan="${cols}" style="text-align:center;opacity:.5">${empty}</td></tr>`;
+  }
+  const recipeCell = r => `<a href="/recipe/${encodeURIComponent(r.slug)}" target="_blank" rel="noopener">${escHtml(r.title)}</a>`;
+  const resultsCell = r => r.results === 0
+    ? '<span class="badge badge-primary" title="Nobody found a recipe for this. Maybe your next cook?">0 results</span>'
+    : (r.results == null ? "—" : fmt(r.results));
+  const productCell = r => `<a href="${escHtml(r.url)}" target="_blank" rel="noopener">${escHtml(r.title)}</a>`;
+
+  async function loadInsights(days, limit, ids, full) {
+    const [recipes, searches, products] = await Promise.all([
+      api("GET", `/api/admin/analytics/top-recipes?days=${days}&limit=${limit}`),
+      api("GET", `/api/admin/analytics/top-searches?days=${days}&limit=${limit}`),
+      api("GET", `/api/admin/analytics/top-products?days=${days}&limit=${limit}`),
+    ]);
+    fillTable(ids[0], recipes, r => full
+      ? [recipeCell(r), fmt(r.views), fmt(r.prints)] : [recipeCell(r), fmt(r.views)], "No recipe views yet");
+    fillTable(ids[1], searches, r => full
+      ? [escHtml(r.term), fmt(r.searches), resultsCell(r)] : [escHtml(r.term), fmt(r.searches)], "No searches yet");
+    fillTable(ids[2], products, r => full
+      ? [productCell(r), escHtml(r.section), fmt(r.clicks)] : [productCell(r), fmt(r.clicks)], "No product clicks yet");
+  }
+
   // ── Dashboard ─────────────────────────────────────────────────────────────────
   async function loadDashboard() {
     try {
-      const [overview, daily, topLinks, sources] = await Promise.all([
+      const [overview, daily, sources] = await Promise.all([
         api("GET", "/api/admin/analytics/overview"),
         api("GET", "/api/admin/analytics/daily?days=30"),
-        api("GET", "/api/admin/analytics/top-links?limit=5"),
         api("GET", "/api/admin/analytics/traffic-sources?days=30"),
+        loadInsights(30, 5, ["dash-recipes", "dash-searches", "dash-products"], false),
       ]);
       if (!overview) return;
 
@@ -200,10 +228,6 @@
       renderTrendChart("chart-trend", daily, true);
       renderSourcesChart("chart-sources", sources, true);
 
-      const tbody = document.getElementById("top-links-table");
-      tbody.innerHTML = topLinks.length
-        ? topLinks.map(l => `<tr><td>${escHtml(l.title)}</td><td style="text-align:right"><span class="badge badge-primary">${fmt(l.clicks)}</span></td></tr>`).join("")
-        : '<tr><td colspan="2" style="text-align:center;opacity:.5">No click data yet</td></tr>';
     } catch (err) {
       toast("Failed to load dashboard: " + err.message, "error");
     }
@@ -213,12 +237,11 @@
   async function loadAnalytics() {
     const days = document.getElementById("analytics-range").value;
     try {
-      const [daily, topLinks, sources, geo, utms] = await Promise.all([
+      const [daily, sources, geo] = await Promise.all([
         api("GET", `/api/admin/analytics/daily?days=${days}`),
-        api("GET", `/api/admin/analytics/top-links?limit=10`),
         api("GET", `/api/admin/analytics/traffic-sources?days=${days}`),
         api("GET", `/api/admin/analytics/geo?days=${days}`),
-        api("GET", `/api/admin/analytics/utm-campaigns?days=${days}`),
+        loadInsights(days, 20, ["an-recipes", "an-searches", "an-products"], true),
       ]);
       if (!daily) return;
 
@@ -230,15 +253,6 @@
         ? geo.map(r => `<tr><td>${escHtml(r.country)}</td><td style="text-align:right">${fmt(r.count)}</td></tr>`).join("")
         : '<tr><td colspan="2" style="text-align:center;opacity:.5">No data</td></tr>';
 
-      const utmBody = document.getElementById("utm-table");
-      utmBody.innerHTML = utms.length
-        ? utms.map(r => `<tr><td>${escHtml(r.campaign)}</td><td>${escHtml(r.source)}</td><td style="text-align:right">${fmt(r.count)}</td></tr>`).join("")
-        : '<tr><td colspan="3" style="text-align:center;opacity:.5">No UTM data</td></tr>';
-
-      const topBody = document.getElementById("top-links-analytics-table");
-      topBody.innerHTML = topLinks.length
-        ? topLinks.map(l => `<tr><td>${escHtml(l.title)}</td><td style="text-align:right"><span class="badge badge-primary">${fmt(l.clicks)}</span></td></tr>`).join("")
-        : '<tr><td colspan="2" style="text-align:center;opacity:.5">No data</td></tr>';
 
       // CSV export links
       document.getElementById("export-visits-btn").href = `/api/admin/analytics/export/visits?days=${days}`;
@@ -274,7 +288,7 @@
             pointRadius: 2,
           },
           {
-            label: "Clicks",
+            label: "Product clicks",
             data: data.map(d => d.clicks),
             borderColor: "#FF6B35",
             backgroundColor: "rgba(255, 107, 53, 0.08)",

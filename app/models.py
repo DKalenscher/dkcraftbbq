@@ -74,6 +74,9 @@ class PageView(Base):
     screen_width = Column(Integer, nullable=True)
     screen_height = Column(Integer, nullable=True)
     session_id = Column(String(36), nullable=True)
+    path = Column(String(300), nullable=True, index=True)        # page viewed, e.g. /recipe/smoked-brisket
+    search = Column(String(200), nullable=True)                  # recipe search term, when the page is a search
+    search_results = Column(Integer, nullable=True)              # how many recipes that search found
 
 
 class LinkClick(Base):

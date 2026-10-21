@@ -116,7 +116,7 @@
         <div class="stats-grid" id="stats-grid">
           <div class="stat-card"><div class="stat-label">Total Visits</div><div class="stat-value" id="stat-total-visits">—</div></div>
           <div class="stat-card"><div class="stat-label">Unique Visitors</div><div class="stat-value" id="stat-unique">—</div></div>
-          <div class="stat-card"><div class="stat-label">Total Clicks</div><div class="stat-value" id="stat-clicks">—</div></div>
+          <div class="stat-card"><div class="stat-label">Product Clicks</div><div class="stat-value" id="stat-clicks">—</div></div>
           <div class="stat-card"><div class="stat-label">Today's Visits</div><div class="stat-value" id="stat-today">—</div><div class="stat-sub" id="stat-today-pages"></div></div>
           <div class="stat-card"><div class="stat-label">This Week</div><div class="stat-value" id="stat-week">—</div></div>
           <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value" id="stat-month">—</div></div>
@@ -124,7 +124,7 @@
 
         <div class="chart-grid">
           <div class="chart-card">
-            <div class="chart-title">Visits &amp; Clicks — Last 30 Days</div>
+            <div class="chart-title">Visits &amp; Product Clicks — Last 30 Days</div>
             <canvas id="chart-trend" height="200"></canvas>
           </div>
           <div class="chart-card">
@@ -133,12 +133,28 @@
           </div>
         </div>
 
-        <div class="table-card">
-          <div class="table-header"><div class="table-title">Top Links</div></div>
-          <table>
-            <thead><tr><th>Link</th><th style="text-align:right">Clicks</th></tr></thead>
-            <tbody id="top-links-table"></tbody>
-          </table>
+        <div class="insight-grid">
+          <div class="table-card">
+            <div class="table-header"><div class="table-title">Top Recipes · 30 days</div></div>
+            <table>
+              <thead><tr><th>Recipe</th><th style="text-align:right">Views</th></tr></thead>
+              <tbody id="dash-recipes"></tbody>
+            </table>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><div class="table-title">Top Searches · 30 days</div></div>
+            <table>
+              <thead><tr><th>Search</th><th style="text-align:right">Times</th></tr></thead>
+              <tbody id="dash-searches"></tbody>
+            </table>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><div class="table-title">Top Products · 30 days</div></div>
+            <table>
+              <thead><tr><th>Product</th><th style="text-align:right">Clicks</th></tr></thead>
+              <tbody id="dash-products"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -172,7 +188,7 @@
 
         <div class="chart-grid">
           <div class="chart-card">
-            <div class="chart-title">Visits &amp; Clicks Trend</div>
+            <div class="chart-title">Visits &amp; Product Clicks</div>
             <canvas id="chart-trend-analytics" height="200"></canvas>
           </div>
           <div class="chart-card">
@@ -181,7 +197,28 @@
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+        <div class="insight-grid insight-grid-2">
+          <div class="table-card">
+            <div class="table-header"><div class="table-title">Top Recipes</div></div>
+            <table>
+              <thead><tr><th>Recipe</th><th style="text-align:right">Views</th><th style="text-align:right">Prints</th></tr></thead>
+              <tbody id="an-recipes"></tbody>
+            </table>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><div class="table-title">Top Searches</div></div>
+            <table>
+              <thead><tr><th>Search</th><th style="text-align:right">Times</th><th style="text-align:right">Results</th></tr></thead>
+              <tbody id="an-searches"></tbody>
+            </table>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><div class="table-title">Top Products</div></div>
+            <table>
+              <thead><tr><th>Product</th><th style="text-align:right">Section</th><th style="text-align:right">Clicks</th></tr></thead>
+              <tbody id="an-products"></tbody>
+            </table>
+          </div>
           <div class="table-card">
             <div class="table-header"><div class="table-title">Top Countries</div></div>
             <table>
@@ -189,21 +226,6 @@
               <tbody id="geo-table"></tbody>
             </table>
           </div>
-          <div class="table-card">
-            <div class="table-header"><div class="table-title">YouTube / UTM Campaigns</div></div>
-            <table>
-              <thead><tr><th>Campaign</th><th>Source</th><th style="text-align:right">Visits</th></tr></thead>
-              <tbody id="utm-table"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="table-card">
-          <div class="table-header"><div class="table-title">Top Links</div></div>
-          <table>
-            <thead><tr><th>Title</th><th style="text-align:right">Clicks</th></tr></thead>
-            <tbody id="top-links-analytics-table"></tbody>
-          </table>
         </div>
       </div>
 

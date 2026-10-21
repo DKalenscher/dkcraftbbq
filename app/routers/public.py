@@ -151,6 +151,9 @@ def track_pageview(
         screen_width=body.screen_width,
         screen_height=body.screen_height,
         session_id=body.session_id,
+        path=(body.path or "")[:300] or None,
+        search=" ".join((body.search or "").lower().split())[:200] or None,
+        search_results=body.search_results,
     )
     db.add(pv)
     db.commit()

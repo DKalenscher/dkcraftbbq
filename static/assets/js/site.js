@@ -29,8 +29,15 @@
     });
   }
 
+  // Recipe searches: the term and how many recipes it found (0 = something people want that's missing)
+  const search = location.pathname === "/recipes" && params.get("q") && !params.get("page") ? params.get("q") : null;
+  const resultsEl = document.querySelector("[data-results]");
+
   post("/api/track/pageview", {
     ...UTM,
+    path: location.pathname,
+    search,
+    search_results: search && resultsEl ? Number(resultsEl.dataset.results) : null,
     referrer: document.referrer || null,
     user_agent: navigator.userAgent,
     screen_width: screen.width,
