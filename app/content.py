@@ -56,6 +56,7 @@ def migrate_db():
             have = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
             if have and column not in have:
                 conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+        conn.exec_driver_sql("DROP TABLE IF EXISTS subscribers")  # newsletter dropped 2026-10-21
         for old, new in LEGACY_CATEGORIES.items():
             conn.exec_driver_sql("UPDATE recipes SET category = ? WHERE category = ?", (new, old))
 

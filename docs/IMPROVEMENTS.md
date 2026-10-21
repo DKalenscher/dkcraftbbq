@@ -5,17 +5,6 @@ the right section; move finished items to **Done** with the date.
 
 ## Up next
 
-### Recipe newsletter (removed 2026-10-21, to bring back properly)
-The signup band was taken off the site because nothing ever sent an email.
-- Pick a free email service (Kit, MailerLite or Buttondown) and get an API key.
-- Add an RSS feed of recipes (`/feed.xml`) so the service can email
-  "New recipe: …" automatically whenever one is published.
-- Point the signup form at the service; it handles unsubscribe links and
-  CAN-SPAM requirements (don't send from Gmail or the Pi).
-- Restore the signup band: the old markup, CSS and JS are in git history
-  before the commit "Remove the newsletter signup". The `subscribers` table
-  still exists in the database (empty) and can be dropped or migrated.
-
 ### Curate the generated recipes
 Only recipes in a TikTok playlist are on the site, so only those need curating
 (24 as of 2026-10-21, 19 still marked Needs review). Review each in Admin →
@@ -66,7 +55,7 @@ Recipes (the "What was filled in" box lists exactly what was added) and untick
 - 2026-10-21 — Traffic sources recognise TikTok, Instagram, Facebook, Threads,
   Snapchat and Pinterest in-app browsers automatically, so bio links stay clean
   (no UTM tags needed).
-- 2026-10-21 — Newsletter signup removed until an email service is connected.
+- 2026-10-21 — Newsletter dropped: signup, endpoint, admin list and subscribers table removed.
 - 2026-10-21 — Recipes follow the TikTok playlists (Beef, Pork, Poultry, And
   More!). New playlist videos are pulled in automatically and new recipes are
   drafted by Claude Code on the PC and published with "Needs review" on.

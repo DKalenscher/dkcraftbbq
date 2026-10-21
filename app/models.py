@@ -148,12 +148,3 @@ class Video(Base):
     likes = Column(Integer, nullable=False, default=0)
     recipe_slug = Column(String(200), nullable=True, index=True)
     playlist = Column(String(100), nullable=True)                # category slug of its TikTok playlist
-
-
-class Subscriber(Base):
-    __tablename__ = "subscribers"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(320), unique=True, nullable=False)
-    source = Column(String(100), nullable=True)
-    created_at = Column(DateTime, default=func.now())
