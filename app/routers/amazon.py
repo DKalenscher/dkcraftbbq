@@ -3,13 +3,13 @@ import re
 import time
 from fastapi import APIRouter, Depends, Request
 from slowapi import Limiter
-from slowapi.util import get_remote_address
+from ..client_ip import client_ip
 
 from .. import models, schemas
 from ..auth import get_current_user
 
 router = APIRouter(prefix="/api/amazon", tags=["amazon"])
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=client_ip)
 log = logging.getLogger("dkcraftbbq.amazon")
 
 _BLOCK_PHRASES = [

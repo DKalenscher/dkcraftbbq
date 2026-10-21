@@ -5,14 +5,14 @@ import time
 from fastapi import APIRouter, Depends, Request, BackgroundTasks
 from sqlalchemy.orm import Session
 from slowapi import Limiter
-from slowapi.util import get_remote_address
+from ..client_ip import client_ip
 
 from ..database import get_db
 from .. import models, schemas
 from ..config import get_settings
 
 router = APIRouter(tags=["public"])
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=client_ip)
 settings = get_settings()
 
 DEFAULT_SETTINGS = {
@@ -134,10 +134,10 @@ def track_pageview(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
-    client_ip = request.client.host
-    if _is_excluded(client_ip):
+    ip = client_ip(request)
+    if _is_excluded(ip):
         return {"status": "ok"}
-    ip_hash = _hash_ip(client_ip)
+    ip_hash = _hash_ip(ip)
 
     pv = models.PageView(
         ip_hash=ip_hash,
@@ -156,9 +156,9 @@ def track_pageview(
     db.commit()
     db.refresh(pv)
 
-    if client_ip not in ("127.0.0.1", "::1"):
+    if ip not in ("127.0.0.1", "::1"):
         from ..database import SessionLocal
-        background_tasks.add_task(_fetch_geo, pv.id, client_ip, models.PageView, SessionLocal)
+        background_tasks.add_task(_fetch_geo, pv.id, ip, models.PageView, SessionLocal)
 
     return {"status": "ok"}
 
@@ -175,10 +175,10 @@ def track_click(
     if not link:
         return {"status": "ok"}
 
-    client_ip = request.client.host
-    if _is_excluded(client_ip):
+    ip = client_ip(request)
+    if _is_excluded(ip):
         return {"status": "ok"}
-    ip_hash = _hash_ip(client_ip)
+    ip_hash = _hash_ip(ip)
 
     click = models.LinkClick(
         link_id=body.link_id,
@@ -196,8 +196,8 @@ def track_click(
     db.commit()
     db.refresh(click)
 
-    if client_ip not in ("127.0.0.1", "::1"):
+    if ip not in ("127.0.0.1", "::1"):
         from ..database import SessionLocal
-        background_tasks.add_task(_fetch_geo, click.id, client_ip, models.LinkClick, SessionLocal)
+        background_tasks.add_task(_fetch_geo, click.id, ip, models.LinkClick, SessionLocal)
 
     return {"status": "ok"}

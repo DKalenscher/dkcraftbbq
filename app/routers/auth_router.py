@@ -2,14 +2,14 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from slowapi import Limiter
-from slowapi.util import get_remote_address
+from ..client_ip import client_ip
 
 from ..database import get_db
 from .. import models, schemas
 from ..auth import verify_password, hash_password, create_access_token, get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=client_ip)
 
 
 @router.post("/token", response_model=schemas.TokenResponse)

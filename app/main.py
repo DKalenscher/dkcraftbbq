@@ -23,7 +23,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
+from .client_ip import client_ip
 
 from .config import get_settings
 from .database import BASE_DIR, Base, engine, SessionLocal, _UPLOAD_DIR
@@ -85,7 +85,7 @@ def _initialize_db():
 _initialize_db()
 seed_content()
 
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=client_ip)
 
 app = FastAPI(
     title="DKCraftBBQ",
