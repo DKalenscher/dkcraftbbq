@@ -44,6 +44,12 @@ Recipes (the "What was filled in" box lists exactly what was added) and untick
   branch `v1-fallback` so pushes never change it.
 
 ## Done
+- 2026-10-21 — Shop rebuilt from the old Linktree and the Amazon Storefront lists:
+  Storefront banner, Meat (Snake River Farms, Porter Road via Impact), Favorite
+  Rubs & Sauces, Grilling Gear Essentials, Pastrami Essentials, Kitchen Tools
+  (42 items). New Amazon items use `amazon.com/dp/ASIN?tag=dkcraftbbq-20`; the
+  Linktree-wrapped `r.amzlink.to` links were replaced with your own tag. Edit in
+  Admin → Shop Links. Pi DB backup: `data/dkcraftbbq.db.bak-before-shop-*`.
 - 2026-10-21 — The Pi deploys `master` (GitHub webhook pulls on push to `master`).
   On the Pi the live code is still in `~/dkcraftbbq-v2` (service
   `dkcraftbbq-v2.service`, port 8000). The old `v2` branch is no longer used.
