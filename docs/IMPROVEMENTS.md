@@ -58,13 +58,14 @@ Recipes (the "What was filled in" box lists exactly what was added) and untick
 - **Old site fallback:** v1 still runs on Pi port 8001 (`~/switch-site.sh v1`
   to roll back). Retire it once v2 has been stable for a while. The old code is
   tagged `v1-final` in git.
-- **Traffic source tracking:** add `?utm_source=tiktok` to the TikTok bio link
-  (and `ig` for Instagram) so the dashboard can tell where visits come from.
 
 ## Done
 - 2026-10-21 — v2 recipe site launched; merged into `master`.
 - 2026-10-21 — Analytics: visits counted per session, sources grouped by site,
   real visitor IP behind Cloudflare, home network excluded, data reset.
+- 2026-10-21 — Traffic sources recognise TikTok, Instagram, Facebook, Threads,
+  Snapchat and Pinterest in-app browsers automatically, so bio links stay clean
+  (no UTM tags needed).
 - 2026-10-21 — Newsletter signup removed until an email service is connected.
 - 2026-10-21 — Recipes follow the TikTok playlists (Beef, Pork, Poultry, And
   More!). New playlist videos are pulled in automatically and new recipes are

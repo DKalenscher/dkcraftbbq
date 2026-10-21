@@ -30,6 +30,16 @@ SOURCE_NAMES = {
     "pinterest.com": "Pinterest",
     "linktr.ee": "Linktree",
 }
+# In-app browsers name themselves in the user agent, so a tap on a link in the
+# TikTok or Instagram app is recognised even though those apps send no referrer.
+IN_APP_BROWSERS = [
+    (("musical_ly", "BytedanceWebview", "trill_"), "TikTok"),
+    (("Instagram",), "Instagram"),
+    (("FBAN/", "FBAV/", "FB_IAB"), "Facebook"),
+    (("Barcelona",), "Threads"),
+    (("Snapchat",), "Snapchat"),
+    (("Pinterest",), "Pinterest"),
+]
 UTM_NAMES = {"ig": "Instagram", "instagram": "Instagram", "tiktok": "TikTok",
              "fb": "Facebook", "facebook": "Facebook", "yt": "YouTube", "youtube": "YouTube"}
 
@@ -51,13 +61,14 @@ def _is_internal(referrer: Optional[str]) -> bool:
     return any(host == h or host.endswith("." + h) for h in OWN_HOSTS)
 
 
-def _source_label(utm_source: Optional[str], referrer: Optional[str]) -> str:
+def _source_label(utm_source: Optional[str], referrer: Optional[str], user_agent: Optional[str] = None) -> str:
     if utm_source:
         return UTM_NAMES.get(utm_source.strip().lower(), utm_source)
-    if not referrer or _is_internal(referrer):
-        return "Direct"
-    host = _host(referrer)
+    host = _host(referrer) if referrer and not _is_internal(referrer) else ""
     if not host:
+        for markers, name in IN_APP_BROWSERS:
+            if user_agent and any(m in user_agent for m in markers):
+                return name
         return "Direct"
     for domain, name in SOURCE_NAMES.items():
         if host == domain or host.endswith("." + domain):
@@ -171,16 +182,18 @@ def get_traffic_sources(
 ):
     start = datetime.utcnow() - timedelta(days=days)
     rows = (
-        db.query(VISIT_KEY.label("visit"), models.PageView.utm_source, models.PageView.referrer)
+        db.query(VISIT_KEY.label("visit"), models.PageView.utm_source, models.PageView.referrer,
+                 models.PageView.user_agent)
         .filter(models.PageView.timestamp >= start)
         .order_by(models.PageView.timestamp, models.PageView.id)
         .all()
     )
-    # One source per visit: the first page view that came from outside the site.
+    # One source per visit: the first page view that came from outside the site
+    # (by UTM tag, outside referrer, or an app's built-in browser).
     # A visit with no outside referrer counts as Direct.
     first: dict[str, str] = {}
     for r in rows:
-        label = _source_label(r.utm_source, r.referrer)
+        label = _source_label(r.utm_source, r.referrer, r.user_agent)
         if r.visit not in first or (first[r.visit] == "Direct" and label != "Direct"):
             first[r.visit] = label
     counts: dict[str, int] = {}
