@@ -44,6 +44,12 @@ Recipes (the "What was filled in" box lists exactly what was added) and untick
   branch `v1-fallback` so pushes never change it.
 
 ## Done
+- 2026-10-21 — SEO: Google Search Console (Domain property, sitemap submitted) and
+  Bing Webmaster Tools (meta tag `msvalidate.01` in base.html) set up. Recipe
+  structured data has ISO times; sitemap has lastmod; homepage has WebSite and
+  Organization schema.
+- 2026-10-21 — Print buttons open `/recipe/<slug>/print` (noindex); in-app
+  browsers get an "Open in browser" note since they ignore window.print().
 - 2026-10-21 — Shop rebuilt from the old Linktree and the Amazon Storefront lists:
   Storefront banner, Meat (Snake River Farms, Porter Road via Impact), Favorite
   Rubs & Sauces, Grilling Gear Essentials, Pastrami Essentials, Kitchen Tools
