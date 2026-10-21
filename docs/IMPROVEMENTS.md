@@ -30,22 +30,23 @@ Recipes (the "What was filled in" box lists exactly what was added) and untick
   downloads start failing.
 - **TikTok sync, PC side** (`tools/pc_sync.py`): started by hand with
   "DKCraftBBQ Recipe Sync.bat" on the Windows desktop (runs
-  `tools/pc_sync_loop.sh` in WSL). Checks right away and every 3 hours while the
+  `~/dkcraftbbq/tools/pc_sync_loop.sh` in WSL). Checks right away and every 3 hours while the
   window is open; Enter checks now; closing the window stops it, and it has to
   be started again after each login. Only starts Claude Code when there's a new
   playlist video, writes the recipe with `claude -p` on your subscription, and
-  sends it to the Pi. Log: `~/dkcraftbbq-v2/data/pc_sync.log` on the PC. At most
+  sends it to the Pi. Log: `~/dkcraftbbq/data/pc_sync.log` on the PC. At most
   5 videos per check; a video that fails 3 checks in a row is left alone
   (`data/pc_sync_failures.json`). Videos Claude judges not to be recipes are
   remembered on the Pi in the `tiktok_skipped_videos` site setting.
-- **Deploy branch:** the Pi's live checkout (`~/dkcraftbbq-v2`) follows `v2`.
-  `master` now equals `v2`; consider switching the Pi to follow `master` and
-  retiring the `v2` branch.
 - **Old site fallback:** v1 still runs on Pi port 8001 (`~/switch-site.sh v1`
   to roll back). Retire it once v2 has been stable for a while. The old code is
-  tagged `v1-final` in git.
+  tagged `v1-final` in git; the Pi's `~/dkcraftbbq` checkout is pinned to it on
+  branch `v1-fallback` so pushes never change it.
 
 ## Done
+- 2026-10-21 — The Pi deploys `master` (GitHub webhook pulls on push to `master`).
+  On the Pi the live code is still in `~/dkcraftbbq-v2` (service
+  `dkcraftbbq-v2.service`, port 8000). The old `v2` branch is no longer used.
 - 2026-10-21 — Decided TikTok is the single source for videos and recipes; Instagram
   isn't pulled in and its expired token (2026-09-21) won't be renewed.
 - 2026-10-21 — v2 recipe site launched; merged into `master`.
