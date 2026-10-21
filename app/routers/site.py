@@ -259,14 +259,31 @@ def shop_page(request: Request, db: Session = Depends(get_db)):
         .order_by(models.Section.order_index)
         .all()
     )
-    shop = [
-        {"title": s.title, "description": s.description,
-         "links": [l for l in s.links if l.is_visible and l.url]}
-        for s in sections
-    ]
+    # The Amazon Storefront link (amazon.com/shop/...) shows as a banner, not a card
+    storefront = None
+    shop = []
+    for s in sections:
+        links = []
+        for l in s.links:
+            if not (l.is_visible and l.url):
+                continue
+            if "amazon.com/shop/" in l.url:
+                storefront = storefront or l
+                continue
+            links.append({"id": l.id, "title": l.title, "url": l.url, "image_url": l.image_url,
+                          "cta": _shop_cta(l), "photo": not _is_amazon(l.url)})
+        shop.append({"title": s.title, "description": s.description, "links": links})
     return render("shop.html", _ctx(
-        request, db, shop=[s for s in shop if s["links"]],
+        request, db, shop=[s for s in shop if s["links"]], storefront=storefront,
     ))
+
+
+def _is_amazon(url: str) -> bool:
+    return any(d in url for d in ("amazon.com", "amzn.to", "a.co/"))
+
+
+def _shop_cta(link: models.Link) -> str:
+    return "View on Amazon" if _is_amazon(link.url) else f"Shop {link.title}"
 
 
 @router.get("/about", response_class=HTMLResponse)

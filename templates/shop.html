@@ -6,6 +6,15 @@
 <section class="wrap block">
   {{ heading(("Gear I", "Actually Use"), tag="h1") }}
   <p class="sec-blurb">Everything here has been used on camera. Some links are affiliate links, which cost you nothing extra and help keep the smoker fed.</p>
+  {% if storefront %}
+  <a class="storefront" href="{{ storefront.url }}" target="_blank" rel="noopener sponsored" data-link-id="{{ storefront.id }}">
+    <span>
+      <span class="storefront-kicker">Everything in one place</span>
+      <span class="storefront-title">My Amazon Storefront</span>
+    </span>
+    <span class="btn btn-ember">Browse the Storefront →</span>
+  </a>
+  {% endif %}
   {% for s in shop %}
   <div class="shop-section">
     <h2 class="shop-h">{{ s.title }}</h2>
@@ -13,9 +22,9 @@
     <div class="grid grid-4">
       {% for l in s.links %}
       <a class="shop-card" href="{{ l.url }}" target="_blank" rel="noopener sponsored" data-link-id="{{ l.id }}">
-        <span class="shop-img">{% if l.image_url %}<img src="{{ l.image_url }}" alt="" loading="lazy">{% else %}<span class="shop-ph" aria-hidden="true">🔥</span>{% endif %}</span>
+        <span class="shop-img{{ ' shop-img-photo' if l.photo }}">{% if l.image_url %}<img src="{{ l.image_url }}" alt="" loading="lazy">{% else %}<span class="shop-ph" aria-hidden="true">🔥</span>{% endif %}</span>
         <span class="shop-title">{{ l.title|truncate(80) }}</span>
-        <span class="shop-cta">View on Amazon →</span>
+        <span class="shop-cta">{{ l.cta }} →</span>
       </a>
       {% endfor %}
     </div>
