@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading, card, video_tile, subscribe, pager %}
+{% block content %}
+
+{% if featured %}
+<section class="featured wrap" aria-label="Featured recipes">
+  <div class="featured-main">{{ card(featured[0], "card-hero", show_summary=True, lazy=False) }}</div>
+  <div class="featured-side">
+    {% for r in featured[1:] %}{{ card(r, "card-row", show_summary=True) }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="finder" aria-labelledby="finder-h">
+  <div class="wrap">
+    <h2 id="finder-h" class="finder-title">What are we <em>smoking</em> today?</h2>
+    <form class="finder-search" action="/recipes" method="get" role="search">
+      <label class="sr-only" for="finder-q">Search recipes</label>
+      <input id="finder-q" type="search" name="q" placeholder="Search recipes…">
+      <button class="btn" type="submit" aria-label="Search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+      </button>
+    </form>
+    <ul class="chips">
+      {% for slug, (name, _) in categories.items() %}<li><a class="chip" href="/category/{{ slug }}">{{ name }}</a></li>{% endfor %}
+    </ul>
+    <a class="btn btn-outline" href="/recipes">Browse Recipe Index</a>
+  </div>
+</section>
+
+{% if latest %}
+<section class="wrap block" aria-label="Latest recipes">
+  {{ heading(("Latest", "Recipes")) }}
+  <div class="grid grid-3">
+    {% for r in latest %}{{ card(r, "card-tall") }}{% endfor %}
+  </div>
+  {{ pager(1, total_pages, "/recipes") }}
+</section>
+{% endif %}
+
+{{ subscribe("subscribe") }}
+
+{% if popular %}
+<section class="wrap block" aria-label="Most watched recipes">
+  {{ heading(("Most", "Watched"), link="/recipes", link_text="More Recipes") }}
+  <div class="grid grid-4">
+    {% for r in popular %}{{ card(r, show_views=True) }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if seasonal %}
+<section class="seasonal" aria-label="{{ seasonal_meta.title|join(' ') }}">
+  <div class="wrap block">
+    {{ heading(seasonal_meta.title, link=seasonal_meta.link, link_text="See More") }}
+    <p class="sec-blurb">{{ seasonal_meta.blurb }}</p>
+    <div class="grid grid-5">
+      {% for r in seasonal %}{{ card(r) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if videos %}
+<section class="wrap block" aria-label="Latest videos">
+  {{ heading(("Latest", "Videos"), link="/videos", link_text="All Videos") }}
+  <div class="grid grid-4 video-grid">
+    {% for v in videos %}{{ video_tile(v) }}{% endfor %}
+  </div>
+  <div class="follow-row">
+    <a class="btn btn-ember" href="{{ social.tiktok }}" target="_blank" rel="noopener">Follow on TikTok</a>
+    <a class="btn btn-outline" href="{{ social.instagram }}" target="_blank" rel="noopener">Follow on Instagram</a>
+  </div>
+</section>
+{% endif %}
+
+{% if spotlight %}
+<section class="wrap block" aria-label="{{ categories[spotlight_cat][0] }} recipes">
+  {{ heading((categories[spotlight_cat][0], "Recipes"), link="/category/" ~ spotlight_cat, link_text="More " ~ categories[spotlight_cat][0] ~ " Recipes") }}
+  <div class="grid grid-4">
+    {% for r in spotlight %}{{ card(r) }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{{ subscribe(None, "subscribe-smoke") }}
+
+{% endblock %}

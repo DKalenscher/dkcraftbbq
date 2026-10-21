@@ -1,0 +1,64 @@
+{% macro heading(parts, tag="h2", link=None, link_text=None) -%}
+<div class="sec-head">
+  <{{ tag }} class="sec-title">{{ parts[0] }} <em>{{ parts[1] }}</em></{{ tag }}>
+  {% if link %}<a class="sec-link" href="{{ link }}">{{ link_text }} →</a>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro card(r, size="", show_summary=False, show_views=False, lazy=True) -%}
+<article class="card {{ size }}">
+  <a class="card-img" href="/recipe/{{ r.slug }}" tabindex="-1" aria-hidden="true">
+    {% if r.image %}<img src="{{ r.image }}" alt="" {% if lazy %}loading="lazy"{% endif %}>{% endif %}
+  </a>
+  <div class="card-body">
+    <a class="card-cat" href="/category/{{ r.category }}">{{ r.category_name }}</a>
+    <h3 class="card-title"><a href="/recipe/{{ r.slug }}">{{ r.title }}</a></h3>
+    {% if show_summary and r.summary %}<p class="card-summary">{{ r.summary }}</p>
+    <a class="read-more" href="/recipe/{{ r.slug }}">Read More</a>{% endif %}
+    {% if show_views and r.views %}<p class="card-views"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>{{ r.views|views }} views</p>{% endif %}
+  </div>
+</article>
+{%- endmacro %}
+
+{% macro video_tile(v) -%}
+<a class="video-tile" href="https://www.tiktok.com/@dkcraftbbq/video/{{ v.id }}" target="_blank" rel="noopener">
+  {% if v.thumb %}<img src="{{ v.thumb }}" alt="" loading="lazy">{% endif %}
+  <span class="play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+  <span class="video-meta">
+    <span class="video-cap">{{ v.caption.split('#')[0].split(' - ')[0]|truncate(70) }}</span>
+    {% if v.views %}<span class="video-views">{{ v.views|views }} views</span>{% endif %}
+  </span>
+</a>
+{%- endmacro %}
+
+{% macro subscribe(id="subscribe", variant="") -%}
+<section class="subscribe {{ variant }}" {% if id %}id="{{ id }}"{% endif %} aria-labelledby="{{ id or 'sub' }}-h">
+  <div class="wrap subscribe-inner">
+    <div>
+      <h2 id="{{ id or 'sub' }}-h" class="subscribe-title">Get new recipes <em>hot off the smoker</em></h2>
+      <p>One email when a new cook goes up. No spam, unsubscribe anytime.</p>
+    </div>
+    <form class="subscribe-form" data-source="{{ id or variant }}" novalidate>
+      <label class="sr-only" for="{{ id or variant }}-email">Email address</label>
+      <input id="{{ id or variant }}-email" type="email" name="email" placeholder="Your email address" required autocomplete="email">
+      <button class="btn btn-ember" type="submit">Subscribe</button>
+      <p class="subscribe-msg" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+{%- endmacro %}
+
+{% macro pager(page, pages, base_path, extra_qs="") -%}
+{% if pages > 1 %}
+<nav class="pager" aria-label="Pagination">
+  {% if page > 1 %}<a class="pager-btn" href="{{ base_path }}?page={{ page - 1 }}{{ extra_qs }}">← Prev</a>{% endif %}
+  {% for p in range(1, pages + 1) %}
+    {% if p == 1 or p == pages or (p >= page - 1 and p <= page + 1) %}
+      {% if p == page %}<span class="pager-num current" aria-current="page">{{ p }}</span>
+      {% else %}<a class="pager-num" href="{{ base_path }}?page={{ p }}{{ extra_qs }}">{{ p }}</a>{% endif %}
+    {% elif p == 2 or p == pages - 1 %}<span class="pager-gap">…</span>{% endif %}
+  {% endfor %}
+  {% if page < pages %}<a class="pager-btn" href="{{ base_path }}?page={{ page + 1 }}{{ extra_qs }}">Next →</a>{% endif %}
+</nav>
+{% endif %}
+{%- endmacro %}

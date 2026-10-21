@@ -68,8 +68,11 @@
 
       <div class="nav-group">
         <div class="nav-group-label sidebar-label">Content</div>
+        <button class="nav-item" data-tab="recipes">
+          <span class="icon">🍖</span><span class="sidebar-label"> Recipes</span>
+        </button>
         <button class="nav-item" data-tab="content">
-          <span class="icon">🔗</span><span class="sidebar-label"> Links &amp; Sections</span>
+          <span class="icon">🔗</span><span class="sidebar-label"> Shop Links</span>
         </button>
       </div>
 
@@ -301,6 +304,61 @@
       </div>
 
       <!-- ── Settings ─────────────────────────────────────────────────────── -->
+      <div class="page" id="page-recipes">
+        <div class="page-header">
+          <h2 class="page-title">Recipes</h2>
+          <label style="display:flex;gap:8px;align-items:center;margin:0;text-transform:none;letter-spacing:0">
+            <input type="checkbox" id="recipes-review-only" style="width:auto"> Only show recipes that need review
+          </label>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><div class="table-title" id="recipes-count">Recipes</div></div>
+          <div id="recipes-list" class="recipes-list"></div>
+        </div>
+        <div class="table-card" style="margin-top:18px">
+          <div class="table-header"><div class="table-title" id="subs-count">Newsletter Subscribers</div>
+            <button class="btn btn-secondary btn-sm" id="subs-export">Copy emails</button></div>
+          <div id="subs-list" style="padding:16px 22px"></div>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="recipe-modal">
+        <div class="modal" style="max-width:760px;width:100%">
+          <div class="modal-header">
+            <h3 class="modal-title" id="recipe-modal-title">Edit Recipe</h3>
+            <button class="btn btn-ghost btn-icon" data-close-recipe>✕</button>
+          </div>
+          <form id="recipe-form" class="modal-body" style="max-height:70vh;overflow:auto">
+            <div class="recipe-review-box" id="rf-review-box"></div>
+            <div class="form-group"><label>Title</label><input type="text" name="title" required></div>
+            <div class="form-group"><label>Category</label><select name="category"></select></div>
+            <div class="form-group"><label>Summary</label><textarea name="summary" rows="2"></textarea></div>
+            <div class="form-group"><label>Article (blank line between paragraphs, "## " for a heading)</label><textarea name="article" rows="10"></textarea></div>
+            <div class="form-group"><label>Ingredients (one per line; a line like "# Brine" starts a group)</label><textarea name="ingredients" rows="8"></textarea></div>
+            <div class="form-group"><label>Steps (one per line)</label><textarea name="steps" rows="8"></textarea></div>
+            <div class="form-group"><label>Pitmaster notes (one per line)</label><textarea name="notes" rows="3"></textarea></div>
+            <div class="recipe-grid">
+              <div class="form-group"><label>Prep</label><input type="text" name="prep_time"></div>
+              <div class="form-group"><label>Cook</label><input type="text" name="cook_time"></div>
+              <div class="form-group"><label>Total</label><input type="text" name="total_time"></div>
+              <div class="form-group"><label>Yield</label><input type="text" name="yield_text"></div>
+              <div class="form-group"><label>Method</label><input type="text" name="method"></div>
+              <div class="form-group"><label>Wood</label><input type="text" name="wood"></div>
+            </div>
+            <div class="form-group"><label>Review notes (admin only)</label><textarea name="review_notes" rows="3"></textarea></div>
+            <div class="recipe-checks">
+              <label><input type="checkbox" name="needs_review"> Needs review</label>
+              <label><input type="checkbox" name="is_featured"> Featured on home page</label>
+              <label><input type="checkbox" name="is_published"> Published</label>
+            </div>
+          </form>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-close-recipe>Cancel</button>
+            <button class="btn btn-primary" id="recipe-save">Save</button>
+          </div>
+        </div>
+      </div>
+
       <div class="page" id="page-settings">
         <div class="page-header">
           <h2 class="page-title">Settings</h2>
@@ -465,5 +523,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="/assets/js/admin.js"></script>
+<script src="/assets/js/admin-recipes.js"></script>
 </body>
 </html>

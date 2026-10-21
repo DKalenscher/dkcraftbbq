@@ -18,7 +18,8 @@ logging.basicConfig(
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -36,7 +37,10 @@ from .routers import (
     admin_analytics,
     admin_settings,
     amazon,
+    admin_recipes,
+    site,
 )
+from .content import seed_content
 
 settings = get_settings()
 
@@ -79,6 +83,7 @@ def _initialize_db():
 
 # Run DB init at import time — avoids lifespan compatibility issues with newer FastAPI
 _initialize_db()
+seed_content()
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -118,12 +123,27 @@ app.include_router(admin_links.router)
 app.include_router(admin_analytics.router)
 app.include_router(admin_settings.router)
 app.include_router(amazon.router)
+app.include_router(admin_recipes.router)
+app.include_router(site.router)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def not_found_page(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404 and not request.url.path.startswith("/api/"):
+        db = SessionLocal()
+        try:
+            return site.templates.TemplateResponse(
+                "404.html", site._ctx(request, db), status_code=404
+            )
+        finally:
+            db.close()
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=exc.headers)
 
 async def _restart_service():
     await asyncio.sleep(1)
     env = {**os.environ, "DBUS_SESSION_BUS_ADDRESS": "unix:path=/run/user/1000/bus"}
     await asyncio.create_subprocess_exec(
-        "systemctl", "--user", "restart", "dkcraftbbq.service",
+        "systemctl", "--user", "restart", settings.SERVICE_NAME,
         env=env,
     )
 
@@ -146,7 +166,13 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks):
 
     payload = json.loads(body)
     ref = payload.get("ref", "")
-    if not ref.endswith(("/master", "/main")):
+    # Only deploy pushes to the branch this checkout is on (v1 = master, v2 = v2)
+    proc = await asyncio.create_subprocess_exec(
+        "git", "rev-parse", "--abbrev-ref", "HEAD",
+        cwd=str(BASE_DIR), stdout=asyncio.subprocess.PIPE,
+    )
+    branch = (await proc.communicate())[0].decode().strip()
+    if ref != f"refs/heads/{branch}":
         return {"status": "ignored", "ref": ref}
 
     proc = await asyncio.create_subprocess_exec(
@@ -174,6 +200,12 @@ _STATIC_DIR = BASE_DIR / "static"
 @app.get("/admin", include_in_schema=False)
 async def admin_page():
     return FileResponse(str(_STATIC_DIR / "admin.html"))
+
+
+# The original link-in-bio page stays available for old bio links
+@app.get("/links", include_in_schema=False)
+async def links_page():
+    return FileResponse(str(_STATIC_DIR / "links.html"))
 
 app.mount("/uploads", StaticFiles(directory=_UPLOAD_DIR), name="uploads")
 app.mount("/", StaticFiles(directory=str(_STATIC_DIR), html=True), name="static")

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Page not found | DKCraftBBQ{% endblock %}
+{% block content %}
+<section class="wrap-narrow block empty">
+  <h1 class="sec-title">This one <em>fell off the grate</em></h1>
+  <p>The page you're looking for isn't here. Try searching the recipes instead.</p>
+  <form class="finder-search" action="/recipes" method="get" role="search">
+    <label class="sr-only" for="nf-q">Search recipes</label>
+    <input id="nf-q" type="search" name="q" placeholder="Search recipes…">
+    <button class="btn" type="submit">Search</button>
+  </form>
+  <p><a class="btn btn-outline" href="/">Back home</a></p>
+</section>
+{% endblock %}

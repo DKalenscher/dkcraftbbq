@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading %}
+{% block title %}Shop My Gear | DKCraftBBQ{% endblock %}
+{% block description %}The smokers, tools and supplies DKCraftBBQ actually uses.{% endblock %}
+{% block content %}
+<section class="wrap block">
+  {{ heading(("Gear I", "Actually Use"), tag="h1") }}
+  <p class="sec-blurb">Everything here has been used on camera. Some links are affiliate links, which cost you nothing extra and help keep the smoker fed.</p>
+  {% for s in shop %}
+  <div class="shop-section">
+    <h2 class="shop-h">{{ s.title }}</h2>
+    {% if s.description %}<p class="sec-blurb">{{ s.description }}</p>{% endif %}
+    <div class="grid grid-4">
+      {% for l in s.links %}
+      <a class="shop-card" href="{{ l.url }}" target="_blank" rel="noopener sponsored" data-link-id="{{ l.id }}">
+        <span class="shop-img">{% if l.image_url %}<img src="{{ l.image_url }}" alt="" loading="lazy">{% else %}<span class="shop-ph" aria-hidden="true">🔥</span>{% endif %}</span>
+        <span class="shop-title">{{ l.title|truncate(80) }}</span>
+        <span class="shop-cta">View on Amazon →</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <p class="empty">The gear list is getting restocked. Check back soon.</p>
+  {% endfor %}
+</section>
+{% endblock %}

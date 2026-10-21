@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading, video_tile %}
+{% block title %}Videos | DKCraftBBQ{% endblock %}
+{% block description %}Every DKCraftBBQ cook on video: smoking, curing, sausage making and cold smoking.{% endblock %}
+{% block content %}
+<section class="wrap block">
+  {{ heading(("All", "Videos"), tag="h1") }}
+  <p class="sec-blurb">{{ videos|length }} cooks and counting. Tap any video to watch it on TikTok.</p>
+  <div class="follow-row follow-top">
+    <a class="btn btn-ember" href="{{ social.tiktok }}" target="_blank" rel="noopener">Follow on TikTok</a>
+    <a class="btn btn-outline" href="{{ social.instagram }}" target="_blank" rel="noopener">Follow on Instagram</a>
+  </div>
+  <div class="grid grid-4 video-grid">
+    {% for v in videos %}{{ video_tile(v) }}{% endfor %}
+  </div>
+</section>
+{% endblock %}

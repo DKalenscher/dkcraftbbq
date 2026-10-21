@@ -103,3 +103,55 @@ class SiteSetting(Base):
     key = Column(String(100), primary_key=True)
     value = Column(Text, nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class Recipe(Base):
+    __tablename__ = "recipes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String(200), unique=True, nullable=False, index=True)
+    title = Column(String(300), nullable=False)
+    category = Column(String(100), nullable=False, index=True)
+    summary = Column(Text, nullable=False, default="")
+    article = Column(Text, nullable=False, default="")          # paragraphs separated by blank lines
+    ingredients = Column(Text, nullable=False, default="[]")    # JSON: [{"group": str, "items": [str]}]
+    steps = Column(Text, nullable=False, default="[]")          # JSON: [str]
+    notes = Column(Text, nullable=False, default="[]")          # JSON: [str]
+    prep_time = Column(String(60), nullable=True)
+    cook_time = Column(String(60), nullable=True)
+    total_time = Column(String(60), nullable=True)
+    yield_text = Column(String(100), nullable=True)
+    method = Column(String(100), nullable=True)
+    wood = Column(String(100), nullable=True)
+    image = Column(Text, nullable=True)
+    video_ids = Column(Text, nullable=False, default="[]")      # JSON: [tiktok id]
+    views = Column(Integer, nullable=False, default=0)
+    needs_review = Column(Boolean, nullable=False, default=False)
+    review_notes = Column(Text, nullable=True)
+    is_published = Column(Boolean, nullable=False, default=True)
+    is_featured = Column(Boolean, nullable=False, default=False)
+    published_at = Column(DateTime, nullable=True, index=True)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class Video(Base):
+    __tablename__ = "videos"
+
+    id = Column(String(40), primary_key=True)                   # TikTok video id
+    caption = Column(Text, nullable=False, default="")
+    posted_at = Column(DateTime, nullable=True, index=True)
+    duration = Column(Integer, nullable=True)
+    thumb = Column(Text, nullable=True)
+    views = Column(Integer, nullable=False, default=0)
+    likes = Column(Integer, nullable=False, default=0)
+    recipe_slug = Column(String(200), nullable=True, index=True)
+
+
+class Subscriber(Base):
+    __tablename__ = "subscribers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(320), unique=True, nullable=False)
+    source = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=func.now())

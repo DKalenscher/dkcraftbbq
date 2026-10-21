@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading, card, subscribe %}
+{% block title %}{{ r.title }} | DKCraftBBQ{% endblock %}
+{% block description %}{{ r.summary }}{% endblock %}
+{% block og_image %}{% if r.image %}<meta property="og:image" content="{{ site_url }}{{ r.image }}">{% endif %}{% endblock %}
+{% block head %}<script type="application/ld+json">{{ schema|safe }}</script>{% endblock %}
+{% block content %}
+<article class="post">
+  <header class="post-head wrap-narrow">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a> <span aria-hidden="true">/</span>
+      <a href="/category/{{ r.category }}">{{ cat_name }}</a>
+    </nav>
+    <h1 class="post-title">{{ r.title }}</h1>
+    <p class="post-summary">{{ r.summary }}</p>
+    <div class="post-meta">
+      <span>By DKCraftBBQ</span>
+      {% if r.published_at %}<span>{{ r.published_at.strftime('%B %-d, %Y') }}</span>{% endif %}
+      {% if r.views %}<span>{{ r.views|views }} video views</span>{% endif %}
+    </div>
+    <div class="post-actions">
+      <a class="btn btn-ember" href="#recipe">Jump to Recipe ↓</a>
+      {% if video_ids %}<a class="btn btn-outline" href="#watch">Watch the Video</a>{% endif %}
+      <button class="btn btn-outline" type="button" data-print>Print Recipe</button>
+    </div>
+  </header>
+
+  <div class="post-body wrap-narrow">
+    {% if r.image %}
+    <figure class="post-hero"><img src="{{ r.image }}" alt="{{ r.title }}"></figure>
+    {% endif %}
+
+    <div class="prose">
+      {% for p in r.article|paragraphs %}
+        {% if p.startswith('## ') %}<h2>{{ p[3:] }}</h2>{% else %}<p>{{ p }}</p>{% endif %}
+      {% endfor %}
+    </div>
+
+    {% if video_ids %}
+    <section id="watch" class="watch" aria-labelledby="watch-h">
+      <h2 id="watch-h" class="watch-title">Watch the <em>cook</em></h2>
+      <div class="watch-grid">
+        {% for vid in video_ids[:2] %}
+        <div class="tiktok-frame">
+          <iframe src="https://www.tiktok.com/player/v1/{{ vid }}?description=0&music_info=0&rel=0" title="{{ r.title }} video {{ loop.index }}" loading="lazy" allow="encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>
+        </div>
+        {% endfor %}
+      </div>
+      {% if video_ids|length > 2 %}
+      <p class="watch-more">More from this cook:
+        {% for vid in video_ids[2:] %}<a href="https://www.tiktok.com/@dkcraftbbq/video/{{ vid }}" target="_blank" rel="noopener">part {{ loop.index + 2 }}</a>{{ ", " if not loop.last }}{% endfor %}
+      </p>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <section id="recipe" class="recipe-card" aria-labelledby="rc-title">
+      <div class="rc-head">
+        {% if r.image %}<img class="rc-img" src="{{ r.image }}" alt="" loading="lazy">{% endif %}
+        <div>
+          <p class="rc-kicker">{{ cat_name }}</p>
+          <h2 id="rc-title" class="rc-title">{{ r.title }}</h2>
+          <p class="rc-summary">{{ r.summary }}</p>
+          <button class="btn btn-ember btn-sm" type="button" data-print>Print</button>
+        </div>
+      </div>
+      <dl class="rc-facts">
+        {% for label, value in [("Prep", r.prep_time), ("Cook", r.cook_time), ("Total", r.total_time), ("Yield", r.yield_text), ("Method", r.method), ("Wood", r.wood)] %}
+          {% if value %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>{% endif %}
+        {% endfor %}
+      </dl>
+      <div class="rc-cols">
+        <div class="rc-ingredients">
+          <h3>Ingredients</h3>
+          {% for g in ingredients %}
+            {% if g.group %}<h4>{{ g.group }}</h4>{% endif %}
+            <ul>{% for i in g['items'] %}<li><label><input type="checkbox"> <span>{{ i }}</span></label></li>{% endfor %}</ul>
+          {% endfor %}
+        </div>
+        <div class="rc-steps">
+          <h3>Instructions</h3>
+          <ol>{% for s in steps %}<li>{{ s }}</li>{% endfor %}</ol>
+        </div>
+      </div>
+      {% if notes %}
+      <div class="rc-notes">
+        <h3>Pitmaster Notes</h3>
+        <ul>{% for n in notes %}<li>{{ n }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+      <p class="rc-foot">Times and temps are my starting points. Every cooker and every cut runs a little different, so cook to temperature and feel, not the clock.</p>
+    </section>
+  </div>
+
+  {% if related %}
+  <section class="wrap block" aria-label="More {{ cat_name }} recipes">
+    {{ heading(("More", cat_name), link="/category/" ~ r.category, link_text="See all") }}
+    <div class="grid grid-4">{% for x in related %}{{ card(x) }}{% endfor %}</div>
+  </section>
+  {% endif %}
+</article>
+{{ subscribe("subscribe") }}
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading, card, pager %}
+{% block title %}{{ title_parts|join(' ') }}{% if page > 1 %} — Page {{ page }}{% endif %} | DKCraftBBQ{% endblock %}
+{% block content %}
+<section class="wrap block listing">
+  {{ heading(title_parts, tag="h1") }}
+  {% if blurb %}<p class="sec-blurb">{{ blurb }}</p>{% endif %}
+  <ul class="chips chips-left">
+    <li><a class="chip {% if base_path == '/recipes' %}active{% endif %}" href="/recipes">All</a></li>
+    {% for slug, (name, _) in categories.items() %}
+    <li><a class="chip {% if base_path == '/category/' ~ slug %}active{% endif %}" href="/category/{{ slug }}">{{ name }}</a></li>
+    {% endfor %}
+  </ul>
+  {% if recipes %}
+  <p class="result-count">{{ total }} recipe{{ '' if total == 1 else 's' }}</p>
+  <div class="grid grid-3">
+    {% for r in recipes %}{{ card(r, "card-tall", lazy=loop.index > 3) }}{% endfor %}
+  </div>
+  {{ pager(page, pages, base_path, extra_qs) }}
+  {% else %}
+  <div class="empty">
+    <p>Nothing on the smoker for that one yet.</p>
+    <a class="btn" href="/recipes">See all recipes</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

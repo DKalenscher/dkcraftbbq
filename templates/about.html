@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_macros.html" import subscribe %}
+{% block title %}About | DKCraftBBQ{% endblock %}
+{% block content %}
+<section class="wrap-narrow block about">
+  {% if site.logo_path %}<img class="about-logo" src="{{ site.logo_path }}" alt="DKCraftBBQ logo" width="180" height="180">{% endif %}
+  <h1 class="sec-title">About <em>DKCraftBBQ</em></h1>
+  <div class="prose">
+    <p>DKCraftBBQ is one backyard, a couple of smokers, and a habit of trying things the hard way first. Brisket and pork butts, sure, but also beef belly pastrami, homemade sausage, and overnight cold smokes when the weather turns.</p>
+    <p>Every recipe on this site started as a cook filmed for TikTok and Instagram. The videos show what actually happened, mistakes included, and the write-ups here fill in the details that don't fit in a caption.</p>
+    <p>If you make something from here, tag <strong>@dkcraftbbq</strong>. I want to see it.</p>
+  </div>
+  <dl class="about-stats">
+    <div><dt>Recipes</dt><dd>{{ recipe_count }}</dd></div>
+    <div><dt>Videos</dt><dd>{{ video_count }}</dd></div>
+  </dl>
+  <div class="follow-row">
+    <a class="btn btn-ember" href="{{ social.tiktok }}" target="_blank" rel="noopener">TikTok</a>
+    <a class="btn btn-outline" href="{{ social.instagram }}" target="_blank" rel="noopener">Instagram</a>
+    <a class="btn btn-outline" href="/shop">Shop My Gear</a>
+  </div>
+</section>
+{{ subscribe("subscribe") }}
+{% endblock %}

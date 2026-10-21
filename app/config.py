@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:8000"
 
     WEBHOOK_SECRET: str = ""
+    SERVICE_NAME: str = "dkcraftbbq.service"
 
     class Config:
         env_file = ".env"

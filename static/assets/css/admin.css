@@ -850,3 +850,20 @@ textarea { resize: vertical; min-height: 80px; }
 
 .upload-area:hover { background: rgba(226, 88, 34, 0.08); border-color: var(--primary); }
 .upload-area p { color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; }
+
+/* ── Recipes tab (v2) ───────────────────────────────── */
+.recipe-row { display: flex; align-items: center; gap: 14px; padding: 12px 22px; border-top: 1px solid var(--border); }
+.recipe-row img { width: 48px; height: 64px; object-fit: cover; border-radius: 6px; flex: none; }
+.recipe-row-main { flex: 1; min-width: 0; }
+.recipe-row-title { font-weight: 600; }
+.recipe-row-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+.recipe-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 14px; }
+.recipe-checks { display: flex; gap: 22px; flex-wrap: wrap; }
+.recipe-checks label { display: flex; gap: 8px; align-items: center; text-transform: none; letter-spacing: 0; font-size: 0.9rem; color: var(--text); }
+.recipe-checks input { width: auto; }
+.recipe-review-box { background: rgba(226, 88, 34, 0.12); border: 1px solid rgba(226, 88, 34, 0.35); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; font-size: 0.88rem; line-height: 1.5; }
+.sub-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+@media (max-width: 640px) {
+  .recipe-grid { grid-template-columns: 1fr 1fr; }
+  .recipe-row { padding: 12px 14px; flex-wrap: wrap; }
+}
