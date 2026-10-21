@@ -1,4 +1,5 @@
 """Server-rendered public pages for the v2 recipe site."""
+import inspect
 import json
 import math
 import re
@@ -21,6 +22,14 @@ from .. import models
 router = APIRouter(include_in_schema=False)
 limiter = Limiter(key_func=get_remote_address)
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+# Starlette >= 0.29 takes (request, name, context); older releases take (name, context)
+_NEW_TEMPLATE_API = next(iter(inspect.signature(templates.TemplateResponse).parameters)) != "name"
+
+
+def render(name: str, context: dict, status_code: int = 200):
+    if _NEW_TEMPLATE_API:
+        return templates.TemplateResponse(context["request"], name, context, status_code=status_code)
+    return templates.TemplateResponse(name, context, status_code=status_code)
 
 SITE_URL = "https://www.dkcraftbbq.com"
 SOCIAL = {
@@ -115,7 +124,7 @@ def home(request: Request, db: Session = Depends(get_db)):
     videos = db.query(models.Video).order_by(models.Video.posted_at.desc()).limit(4).all()
     total = _published(db).count()
 
-    return templates.TemplateResponse("home.html", _ctx(
+    return render("home.html", _ctx(
         request, db,
         featured=[_recipe_view(r) for r in featured],
         latest=[_recipe_view(r) for r in latest.limit(12).all() if r.id not in featured_ids][:6],
@@ -140,7 +149,7 @@ def _listing(request: Request, db: Session, query, page: int, title_parts, blurb
         .limit(PER_PAGE)
         .all()
     )
-    return templates.TemplateResponse("listing.html", _ctx(
+    return render("listing.html", _ctx(
         request, db,
         title_parts=title_parts,
         blurb=blurb,
@@ -223,7 +232,7 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
             "embedUrl": f"https://www.tiktok.com/embed/v2/{video_ids[0]}",
             "uploadDate": r.published_at.date().isoformat() if r.published_at else None,
         }
-    return templates.TemplateResponse("recipe.html", _ctx(
+    return render("recipe.html", _ctx(
         request, db,
         r=r,
         cat_name=category_name(r.category),
@@ -239,7 +248,7 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
 @router.get("/videos", response_class=HTMLResponse)
 def videos_page(request: Request, db: Session = Depends(get_db)):
     videos = db.query(models.Video).order_by(models.Video.posted_at.desc()).all()
-    return templates.TemplateResponse("videos.html", _ctx(request, db, videos=videos))
+    return render("videos.html", _ctx(request, db, videos=videos))
 
 
 @router.get("/shop", response_class=HTMLResponse)
@@ -255,7 +264,7 @@ def shop_page(request: Request, db: Session = Depends(get_db)):
          "links": [l for l in s.links if l.is_visible and l.url]}
         for s in sections
     ]
-    return templates.TemplateResponse("shop.html", _ctx(
+    return render("shop.html", _ctx(
         request, db, shop=[s for s in shop if s["links"]],
     ))
 
@@ -264,7 +273,7 @@ def shop_page(request: Request, db: Session = Depends(get_db)):
 def about_page(request: Request, db: Session = Depends(get_db)):
     recipe_count = _published(db).count()
     video_count = db.query(models.Video).count()
-    return templates.TemplateResponse("about.html", _ctx(
+    return render("about.html", _ctx(
         request, db, recipe_count=recipe_count, video_count=video_count,
     ))
 

@@ -132,9 +132,7 @@ async def not_found_page(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404 and not request.url.path.startswith("/api/"):
         db = SessionLocal()
         try:
-            return site.templates.TemplateResponse(
-                "404.html", site._ctx(request, db), status_code=404
-            )
+            return site.render("404.html", site._ctx(request, db), status_code=404)
         finally:
             db.close()
     return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=exc.headers)
