@@ -22,6 +22,9 @@ class Settings(BaseSettings):
 
     WEBHOOK_SECRET: str = ""
     SERVICE_NAME: str = "dkcraftbbq.service"
+    # Skip analytics for the home network (the site's own public IP, LAN, localhost)
+    EXCLUDE_HOME_NETWORK: bool = True
+    EXCLUDE_IPS: str = ""  # extra comma-separated addresses to skip
 
     class Config:
         env_file = ".env"

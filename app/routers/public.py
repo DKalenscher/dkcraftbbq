@@ -1,5 +1,7 @@
 import hashlib
+import ipaddress
 import json
+import time
 from fastapi import APIRouter, Depends, Request, BackgroundTasks
 from sqlalchemy.orm import Session
 from slowapi import Limiter
@@ -27,6 +29,38 @@ DEFAULT_SETTINGS = {
     "custom_css": "",
     "background_style": "gradient",
 }
+
+
+# Visits from the owner's home network aren't recorded. The site runs at home,
+# so its own public IP is the home IP; it's looked up again every 10 minutes
+# because the ISP changes it from time to time.
+_home_ip = {"ip": None, "checked": 0.0}
+
+
+def _current_home_ip():
+    if time.time() - _home_ip["checked"] > 600:
+        _home_ip["checked"] = time.time()
+        try:
+            import httpx
+            r = httpx.get("https://api.ipify.org", timeout=3)
+            if r.status_code == 200:
+                _home_ip["ip"] = r.text.strip()
+        except Exception:
+            pass  # keep the last known address
+    return _home_ip["ip"]
+
+
+def _is_excluded(ip: str) -> bool:
+    if not settings.EXCLUDE_HOME_NETWORK:
+        return False
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    if addr.is_private or addr.is_loopback:
+        return True
+    extra = {x.strip() for x in settings.EXCLUDE_IPS.split(",") if x.strip()}
+    return ip in extra or ip == _current_home_ip()
 
 
 def _hash_ip(ip: str) -> str:
@@ -101,6 +135,8 @@ def track_pageview(
     db: Session = Depends(get_db),
 ):
     client_ip = request.client.host
+    if _is_excluded(client_ip):
+        return {"status": "ok"}
     ip_hash = _hash_ip(client_ip)
 
     pv = models.PageView(
@@ -140,6 +176,8 @@ def track_click(
         return {"status": "ok"}
 
     client_ip = request.client.host
+    if _is_excluded(client_ip):
+        return {"status": "ok"}
     ip_hash = _hash_ip(client_ip)
 
     click = models.LinkClick(
