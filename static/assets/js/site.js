@@ -64,12 +64,4 @@
   toggle(document.querySelector(".menu-toggle"), document.getElementById("mobile-nav"));
   toggle(document.querySelector(".search-toggle"), document.getElementById("header-search"), "input");
 
-  // ── Print just the recipe card
-  document.querySelectorAll("[data-print]").forEach((b) => {
-    b.addEventListener("click", () => {
-      document.body.classList.add("printing");
-      window.print();
-    });
-  });
-  window.addEventListener("afterprint", () => document.body.classList.remove("printing"));
 })();

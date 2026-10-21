@@ -245,6 +245,24 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
     ))
 
 
+@router.get("/recipe/{slug}/print", response_class=HTMLResponse)
+def recipe_print(slug: str, request: Request, db: Session = Depends(get_db)):
+    """Just the recipe card, for printing. In-app browsers (TikTok, Instagram) ignore
+    window.print(), so the page explains how to open it in a real browser there."""
+    r = _published(db).filter(models.Recipe.slug == slug).first()
+    if not r:
+        raise HTTPException(status_code=404)
+    return render("recipe_print.html", _ctx(
+        request, db,
+        r=r,
+        cat_name=category_name(r.category),
+        ingredients=json.loads(r.ingredients or "[]"),
+        steps=json.loads(r.steps or "[]"),
+        notes=json.loads(r.notes or "[]"),
+        printing=True,
+    ))
+
+
 @router.get("/videos", response_class=HTMLResponse)
 def videos_page(request: Request, db: Session = Depends(get_db)):
     videos = db.query(models.Video).order_by(models.Video.posted_at.desc()).all()

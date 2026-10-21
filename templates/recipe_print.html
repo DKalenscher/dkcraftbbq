@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ r.title }} (Printable) | DKCraftBBQ</title>
+  <meta name="robots" content="noindex">
+  <link rel="canonical" href="{{ site_url }}/recipe/{{ r.slug }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/site.css">
+</head>
+<body class="print-page">
+  <div class="print-toolbar">
+    <a class="btn btn-outline btn-sm" href="/recipe/{{ r.slug }}">← Back to recipe</a>
+    <button class="btn btn-ember btn-sm" type="button" id="print-now">Print</button>
+  </div>
+  <p class="print-inapp" id="print-inapp" hidden>
+    Printing doesn't work inside the TikTok or Instagram app. Tap the <strong>⋯</strong> menu and choose
+    <strong>Open in browser</strong>, then print from there.
+  </p>
+  <main>
+    {% include "_recipe_card.html" %}
+    <p class="print-source">From {{ site_url|replace("https://www.", "") }}/recipe/{{ r.slug }}</p>
+  </main>
+  <script>
+    (() => {
+      const inApp = /musical_ly|BytedanceWebview|trill_|Instagram|FBAN|FBAV|FB_IAB|Snapchat|Barcelona/.test(navigator.userAgent);
+      const btn = document.getElementById("print-now");
+      if (inApp) {
+        document.getElementById("print-inapp").hidden = false;
+        btn.hidden = true;
+        return;
+      }
+      btn.addEventListener("click", () => window.print());
+      // Open the print dialog once fonts and the photo have loaded
+      window.addEventListener("load", () => setTimeout(() => window.print(), 300));
+    })();
+  </script>
+</body>
+</html>

@@ -337,11 +337,17 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
   .finder-search { flex-direction: column; }
 }
 
-/* ── Print: only the recipe card ─────────────────────── */
+/* ── Print page (/recipe/<slug>/print) ───────────────── */
+.print-page [hidden] { display: none !important; }
+.print-page { background: #fff; }
+.print-page main { max-width: 860px; margin: 0 auto; padding: 0 16px 32px; }
+.print-toolbar { max-width: 860px; margin: 0 auto; padding: 16px; display: flex; justify-content: space-between; gap: 12px; }
+.print-inapp { max-width: 860px; margin: 0 auto 16px; padding: 14px 16px; background: var(--cream); border-left: 4px solid var(--ember); }
+.print-source { text-align: center; color: var(--smoke); font-size: 14px; margin: 14px 0 0; }
 @media print {
-  body.printing > *:not(main), body.printing main > *:not(.post), body.printing .post > *:not(.post-body),
-  body.printing .post-body > *:not(.recipe-card) { display: none !important; }
-  body.printing { background: #fff; }
-  body.printing .recipe-card { box-shadow: none; border: 1px solid #000; margin: 0; }
-  body.printing .recipe-card .btn { display: none; }
+  .print-toolbar, .print-inapp { display: none !important; }
+  .print-page main { padding: 0; max-width: none; }
+  .print-page .recipe-card { box-shadow: none; border: 1px solid #000; margin: 0; }
+  .print-page .rc-facts div, .print-page .rc-notes { background: none; }
+  .print-page .rc-steps li, .print-page .rc-ingredients li { break-inside: avoid; }
 }
