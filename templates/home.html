@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import heading, card, video_tile, pager %}
+{% block head %}<script type="application/ld+json">{{ site_schema|safe }}</script>{% endblock %}
 {% block content %}
 
 {% if featured %}

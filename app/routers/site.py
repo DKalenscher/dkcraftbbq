@@ -8,7 +8,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from ..content import CATEGORIES, LEGACY_CATEGORIES, category_name
@@ -78,6 +78,28 @@ def _ctx(request: Request, db: Session, **extra) -> dict:
     }
 
 
+_FRACTIONS = {"½": 0.5, "¼": 0.25, "¾": 0.75}
+_UNIT_HOURS = {"minute": 1 / 60, "min": 1 / 60, "hour": 1, "hr": 1, "day": 24, "week": 168}
+
+
+def iso_duration(text: str | None) -> str | None:
+    """'About 4½ hours' -> 'PT4H30M', '10–14 hours plus hold' -> 'PT10H', '2 weeks' -> 'P14D'.
+    Uses the first amount (the low end of a range); returns None if there isn't one."""
+    if not text:
+        return None
+    m = re.search(r"(\d+(?:\.\d+)?)?\s*([½¼¾])?\s*(?:(?:–|-|to)\s*\d+[½¼¾]?\s*)?"
+                  r"(minutes?|mins?|hours?|hrs?|days?|weeks?)\b", text, re.I)
+    if not m or not (m.group(1) or m.group(2)):
+        return None
+    amount = float(m.group(1) or 0) + _FRACTIONS.get(m.group(2) or "", 0)
+    unit = m.group(3).lower().rstrip("s")
+    hours = amount * _UNIT_HOURS[unit]
+    if hours >= 24:
+        return f"P{round(hours / 24)}D"
+    h, mins = int(hours), round((hours - int(hours)) * 60)
+    return "PT" + (f"{h}H" if h else "") + (f"{mins}M" if mins else "") if (h or mins) else None
+
+
 def fmt_views(n: int) -> str:
     if n >= 1_000_000:
         return f"{n / 1_000_000:.1f}M".replace(".0M", "M")
@@ -121,6 +143,15 @@ def home(request: Request, db: Session = Depends(get_db)):
     )
     videos = db.query(models.Video).order_by(models.Video.posted_at.desc()).limit(4).all()
     total = _published(db).count()
+    site = _settings(db)
+    # Tells Google the site's name (shown above results) and links the social profiles
+    site_schema = [
+        {"@context": "https://schema.org", "@type": "WebSite", "name": "DKCraftBBQ",
+         "alternateName": ["DK Craft BBQ", "dkcraftbbq"], "url": SITE_URL + "/"},
+        {"@context": "https://schema.org", "@type": "Organization", "name": "DKCraftBBQ", "url": SITE_URL + "/",
+         "sameAs": [SOCIAL["tiktok"], SOCIAL["instagram"]],
+         **({"logo": SITE_URL + site["logo_path"]} if site.get("logo_path") else {})},
+    ]
 
     return render("home.html", _ctx(
         request, db,
@@ -133,6 +164,7 @@ def home(request: Request, db: Session = Depends(get_db)):
         spotlight_meta=SPOTLIGHT,
         videos=videos,
         total_pages=max(1, math.ceil(total / PER_PAGE)),
+        site_schema=json.dumps(site_schema).replace("</", "<\\/"),
     ))
 
 
@@ -212,7 +244,7 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
         "@type": "Recipe",
         "name": r.title,
         "description": r.summary,
-        "author": {"@type": "Person", "name": "DKCraftBBQ"},
+        "author": {"@type": "Person", "name": "DKCraftBBQ", "url": SITE_URL + "/about"},
         "recipeCategory": category_name(r.category),
         "recipeIngredient": [i for g in ingredients for i in g.get("items", [])],
         "recipeInstructions": [{"@type": "HowToStep", "text": s} for s in steps],
@@ -223,6 +255,12 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
         schema["datePublished"] = r.published_at.date().isoformat()
     if r.yield_text:
         schema["recipeYield"] = r.yield_text
+    for key, value in (("prepTime", r.prep_time), ("cookTime", r.cook_time), ("totalTime", r.total_time)):
+        if iso_duration(value):
+            schema[key] = iso_duration(value)
+    if r.method:
+        schema["cookingMethod"] = r.method
+    schema["keywords"] = f"{category_name(r.category)}, BBQ, DKCraftBBQ"
     if video_ids:
         schema["video"] = {
             "@type": "VideoObject",
@@ -315,10 +353,28 @@ def about_page(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/sitemap.xml")
 def sitemap(db: Session = Depends(get_db)):
-    urls = ["/", "/recipes", "/videos", "/shop", "/about"]
-    urls += [f"/category/{c}" for c in CATEGORIES]
-    urls += [f"/recipe/{slug}" for (slug,) in _published(db).with_entities(models.Recipe.slug).all()]
-    body = "".join(f"<url><loc>{SITE_URL}{u}</loc></url>" for u in urls)
+    def day(dt):
+        return dt.date().isoformat() if dt else None
+
+    # Publish dates, not updated_at: the TikTok sync touches every recipe's view count,
+    # and a lastmod that's always "today" teaches search engines to ignore it.
+    recipes = _published(db).with_entities(
+        models.Recipe.slug, models.Recipe.category, models.Recipe.published_at).all()
+    changed = {r.slug: r.published_at for r in recipes}
+    newest = max(filter(None, changed.values()), default=None)
+    newest_video = db.query(func.max(models.Video.posted_at)).scalar()
+    newest_link = db.query(func.max(models.Link.updated_at)).scalar()
+
+    urls = [("/", day(newest)), ("/recipes", day(newest)), ("/videos", day(newest_video)),
+            ("/shop", day(newest_link)), ("/about", None)]
+    for c in CATEGORIES:
+        in_cat = [changed[r.slug] for r in recipes if r.category == c and changed[r.slug]]
+        urls.append((f"/category/{c}", day(max(in_cat, default=None))))
+    urls += [(f"/recipe/{r.slug}", day(changed[r.slug])) for r in recipes]
+    body = "".join(
+        f"<url><loc>{SITE_URL}{u}</loc>" + (f"<lastmod>{d}</lastmod>" if d else "") + "</url>"
+        for u, d in urls
+    )
     xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>'
     return Response(xml, media_type="application/xml")
 
