@@ -38,9 +38,6 @@ Recipes (the "What was filled in" box lists exactly what was added) and untick
   5 videos per check; a video that fails 3 checks in a row is left alone
   (`data/pc_sync_failures.json`). Videos Claude judges not to be recipes are
   remembered on the Pi in the `tiktok_skipped_videos` site setting.
-- **Instagram token expired (2026-09-21).** Generate a new long-lived token; it
-  also fixes the Discord bot's Instagram sync. Then Instagram posts could be
-  pulled in alongside TikTok.
 - **Deploy branch:** the Pi's live checkout (`~/dkcraftbbq-v2`) follows `v2`.
   `master` now equals `v2`; consider switching the Pi to follow `master` and
   retiring the `v2` branch.
@@ -49,6 +46,8 @@ Recipes (the "What was filled in" box lists exactly what was added) and untick
   tagged `v1-final` in git.
 
 ## Done
+- 2026-10-21 — Decided TikTok is the single source for videos and recipes; Instagram
+  isn't pulled in and its expired token (2026-09-21) won't be renewed.
 - 2026-10-21 — v2 recipe site launched; merged into `master`.
 - 2026-10-21 — Analytics: visits counted per session, sources grouped by site,
   real visitor IP behind Cloudflare, home network excluded, data reset.
