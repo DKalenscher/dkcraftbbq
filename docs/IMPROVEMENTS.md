@@ -37,14 +37,16 @@ what was added) and untick **Needs review** when approved.
   Log: `~/dkcraftbbq-v2/data/tiktok_sync.log` on the Pi. yt-dlp 2026.08.19 and
   ffmpeg 7.0.2 static live in `~/.local/bin` on the Pi; update yt-dlp if TikTok
   downloads start failing.
-- **TikTok sync, PC side** (`tools/pc_sync.py`): Windows Task Scheduler task
-  "DKCraftBBQ Recipe Sync" runs `tools/pc_sync.sh` in WSL every 3 hours while
-  you're signed in. It only starts Claude Code when there's a new playlist video,
-  writes the recipe with `claude -p` on your subscription, and sends it to the Pi.
-  Log: `~/dkcraftbbq-v2/data/pc_sync.log` on the PC. At most 5 videos per run;
-  a video that fails 3 runs in a row is left alone (`data/pc_sync_failures.json`).
-  Videos Claude judges not to be recipes are remembered on the Pi in the
-  `tiktok_skipped_videos` site setting.
+- **TikTok sync, PC side** (`tools/pc_sync.py`): started by hand with
+  "DKCraftBBQ Recipe Sync.bat" on the Windows desktop (runs
+  `tools/pc_sync_loop.sh` in WSL). Checks right away and every 3 hours while the
+  window is open; Enter checks now; closing the window stops it, and it has to
+  be started again after each login. Only starts Claude Code when there's a new
+  playlist video, writes the recipe with `claude -p` on your subscription, and
+  sends it to the Pi. Log: `~/dkcraftbbq-v2/data/pc_sync.log` on the PC. At most
+  5 videos per check; a video that fails 3 checks in a row is left alone
+  (`data/pc_sync_failures.json`). Videos Claude judges not to be recipes are
+  remembered on the Pi in the `tiktok_skipped_videos` site setting.
 - **Instagram token expired (2026-09-21).** Generate a new long-lived token; it
   also fixes the Discord bot's Instagram sync. Then Instagram posts could be
   pulled in alongside TikTok.
