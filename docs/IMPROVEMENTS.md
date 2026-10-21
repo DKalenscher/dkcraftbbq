@@ -31,12 +31,20 @@ what was added) and untick **Needs review** when approved.
 - Rewrite the About page in your own words.
 
 ## Housekeeping
-- **TikTok sync** (`app/tiktok_sync.py`) runs from cron on the Pi every 3 hours,
-  and from the "Sync from TikTok" button in Admin → Recipes. Log:
-  `~/dkcraftbbq-v2/data/tiktok_sync.log`. It needs `ANTHROPIC_API_KEY` in the
-  Pi's `.env` to draft new recipes; set a monthly spend limit in the Anthropic
-  console. Tools live in `~/.local/bin` on the Pi (yt-dlp 2026.08.19, ffmpeg
-  7.0.2 static); update yt-dlp if TikTok downloads start failing.
+- **TikTok sync, Pi side** (`app/tiktok_sync.py`): cron every 3 hours
+  (`15 */3 * * *`) and the "Sync from TikTok" button in Admin → Recipes. Reads the
+  playlists, shows/hides recipes, refreshes videos, lists videos needing a recipe.
+  Log: `~/dkcraftbbq-v2/data/tiktok_sync.log` on the Pi. yt-dlp 2026.08.19 and
+  ffmpeg 7.0.2 static live in `~/.local/bin` on the Pi; update yt-dlp if TikTok
+  downloads start failing.
+- **TikTok sync, PC side** (`tools/pc_sync.py`): Windows Task Scheduler task
+  "DKCraftBBQ Recipe Sync" runs `tools/pc_sync.sh` in WSL every 3 hours while
+  you're signed in. It only starts Claude Code when there's a new playlist video,
+  writes the recipe with `claude -p` on your subscription, and sends it to the Pi.
+  Log: `~/dkcraftbbq-v2/data/pc_sync.log` on the PC. At most 5 videos per run;
+  a video that fails 3 runs in a row is left alone (`data/pc_sync_failures.json`).
+  Videos Claude judges not to be recipes are remembered on the Pi in the
+  `tiktok_skipped_videos` site setting.
 - **Instagram token expired (2026-09-21).** Generate a new long-lived token; it
   also fixes the Discord bot's Instagram sync. Then Instagram posts could be
   pulled in alongside TikTok.
@@ -56,4 +64,4 @@ what was added) and untick **Needs review** when approved.
 - 2026-10-21 — Newsletter signup removed until an email service is connected.
 - 2026-10-21 — Recipes follow the TikTok playlists (Beef, Pork, Poultry, And
   More!). New playlist videos are pulled in automatically and new recipes are
-  drafted by Claude and published with "Needs review" on.
+  drafted by Claude Code on the PC and published with "Needs review" on.

@@ -236,6 +236,9 @@ Rules:
 - Food safety: poultry to 165°F, ground meat to 160°F, whole pork cuts to 145°F. For curing salt,
   tell readers to follow the package label. Don't repeat unsafe storage claims from a caption;
   soften them and add a note.
+- Title: short, under 50 characters, like "Smoked Turkey Breast with Butter Rest". It also becomes
+  the page address.
+- Spell brands and products exactly as the caption does (e.g. "Millscale", "Meat Church").
 - Temperatures in °F. Article: 2 to 4 short paragraphs; a line starting with "## " is a subheading.
 - Ingredients are grouped (e.g. "Rub", "Brine"); use an empty group name when there's only one group.
 """
