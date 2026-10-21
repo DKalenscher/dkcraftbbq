@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     # Skip analytics for the home network (the site's own public IP, LAN, localhost)
     EXCLUDE_HOME_NETWORK: bool = True
     EXCLUDE_IPS: str = ""  # extra comma-separated addresses to skip
+    # TikTok sync (app/tiktok_sync.py)
+    TIKTOK_USERNAME: str = "dkcraftbbq"
+    YTDLP_PATH: str = "yt-dlp"
+    FFMPEG_PATH: str = "ffmpeg"
+    FFPROBE_PATH: str = "ffprobe"
+    ANTHROPIC_API_KEY: str = ""
+    CLAUDE_MODEL: str = "claude-opus-5-5"
 
     class Config:
         env_file = ".env"

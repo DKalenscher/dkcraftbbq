@@ -311,6 +311,10 @@
             <input type="checkbox" id="recipes-review-only" style="width:auto"> Only show recipes that need review
           </label>
         </div>
+        <div class="sync-bar">
+          <button class="btn btn-secondary btn-sm" id="sync-now">↻ Sync from TikTok</button>
+          <span id="sync-status">Recipes come from your TikTok playlists and sync automatically every 3 hours.</span>
+        </div>
         <div class="table-card">
           <div class="table-header"><div class="table-title" id="recipes-count">Recipes</div></div>
           <div id="recipes-list" class="recipes-list"></div>
@@ -326,7 +330,7 @@
           <form id="recipe-form" class="modal-body" style="max-height:70vh;overflow:auto">
             <div class="recipe-review-box" id="rf-review-box"></div>
             <div class="form-group"><label>Title</label><input type="text" name="title" required></div>
-            <div class="form-group"><label>Category</label><select name="category"></select></div>
+            <div class="form-group"><label>Category <span style="text-transform:none;letter-spacing:0;opacity:.7">(follows the TikTok playlist on each sync)</span></label><select name="category"></select></div>
             <div class="form-group"><label>Summary</label><textarea name="summary" rows="2"></textarea></div>
             <div class="form-group"><label>Article (blank line between paragraphs, "## " for a heading)</label><textarea name="article" rows="10"></textarea></div>
             <div class="form-group"><label>Ingredients (one per line; a line like "# Brine" starts a group)</label><textarea name="ingredients" rows="8"></textarea></div>

@@ -24,17 +24,19 @@ what was added) and untick **Needs review** when approved.
   Steak Fajitas, Smoked Prime Rib Roast, Pork Belly Burnt Ends, Brisket Ramen,
   Homemade Beef Tallow, Buffalo Chicken Lettuce Wraps, Picanha Ciabatta.
 - Then the pastrami brine/cure amounts (Smoked Brisket Pastrami, Kosher Pastrami).
+- Only recipes in a TikTok playlist are on the site now, so curating the ones
+  that are visible is enough.
 - Idea: add a "source" label (from caption / partly filled / written) and a
   "Curated by me" checkbox to the admin Recipes tab.
 - Rewrite the About page in your own words.
 
-### Adding new recipes from new videos
-New TikToks don't show up on the site automatically. Videos and recipes are
-seeded from `content/videos.json` and `content/recipes.json` at startup.
-- Idea: a scheduled job that pulls new TikTok posts (yt-dlp), adds them to the
-  Videos page, and drafts a recipe (hidden, needs review) from the caption.
-
 ## Housekeeping
+- **TikTok sync** (`app/tiktok_sync.py`) runs from cron on the Pi every 3 hours,
+  and from the "Sync from TikTok" button in Admin → Recipes. Log:
+  `~/dkcraftbbq-v2/data/tiktok_sync.log`. It needs `ANTHROPIC_API_KEY` in the
+  Pi's `.env` to draft new recipes; set a monthly spend limit in the Anthropic
+  console. Tools live in `~/.local/bin` on the Pi (yt-dlp 2026.08.19, ffmpeg
+  7.0.2 static); update yt-dlp if TikTok downloads start failing.
 - **Instagram token expired (2026-09-21).** Generate a new long-lived token; it
   also fixes the Discord bot's Instagram sync. Then Instagram posts could be
   pulled in alongside TikTok.
@@ -52,3 +54,6 @@ seeded from `content/videos.json` and `content/recipes.json` at startup.
 - 2026-10-21 — Analytics: visits counted per session, sources grouped by site,
   real visitor IP behind Cloudflare, home network excluded, data reset.
 - 2026-10-21 — Newsletter signup removed until an email service is connected.
+- 2026-10-21 — Recipes follow the TikTok playlists (Beef, Pork, Poultry, And
+  More!). New playlist videos are pulled in automatically and new recipes are
+  drafted by Claude and published with "Needs review" on.

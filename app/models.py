@@ -130,6 +130,7 @@ class Recipe(Base):
     review_notes = Column(Text, nullable=True)
     is_published = Column(Boolean, nullable=False, default=True)
     is_featured = Column(Boolean, nullable=False, default=False)
+    in_playlist = Column(Boolean, nullable=False, default=True)  # set by the TikTok sync
     published_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
@@ -146,6 +147,7 @@ class Video(Base):
     views = Column(Integer, nullable=False, default=0)
     likes = Column(Integer, nullable=False, default=0)
     recipe_slug = Column(String(200), nullable=True, index=True)
+    playlist = Column(String(100), nullable=True)                # category slug of its TikTok playlist
 
 
 class Subscriber(Base):

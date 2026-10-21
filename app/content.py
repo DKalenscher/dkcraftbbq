@@ -1,31 +1,63 @@
 """Recipe/video catalog: category definitions and seeding from content/*.json.
 
-Videos are refreshed from the seed on every start (they mirror TikTok).
-Recipes are only inserted when their slug is new, so edits made in the
-admin panel are never overwritten.
+Rows are only inserted when they're new, so admin edits and the data the
+TikTok sync keeps up to date (views, playlists, new recipes) are never
+overwritten by the seed files.
 """
 import json
 from datetime import datetime
 
-from .database import BASE_DIR, SessionLocal
+from .database import BASE_DIR, SessionLocal, engine
 from . import models
 
 CONTENT_DIR = BASE_DIR / "content"
 
-# slug -> (display name, short blurb)
+# slug -> (display name, short blurb). These mirror the TikTok playlists; a
+# recipe's category follows the playlist its videos are in (app/tiktok_sync.py).
 CATEGORIES = {
-    "beef": ("Beef", "Brisket, chuck roast, beef cheeks, short ribs and every other cut that rewards patience."),
-    "pastrami-cured": ("Pastrami & Cured", "Brined, cured and smoked: pastrami, beef belly bacon, sausage and jerky."),
+    "beef": ("Beef", "Brisket, pastrami, chuck roast, beef cheeks, short ribs and every other cut that rewards patience."),
     "pork": ("Pork", "Ribs, loin, belly and pulled shoulder off the smoker."),
     "poultry": ("Poultry", "Turkey breast, brined wings and lighter cooks."),
-    "over-the-fire": ("Over the Fire", "Steaks, lamb and skewers seared hard over live coals."),
-    "cold-smoked": ("Cold Smoked", "Cheese and anything else that takes smoke but should never get warm."),
-    "apps-sides": ("Apps, Sides & Basics", "Poppers, smoked cream cheese, tallow and other supporting cast."),
+    "more": ("And More!", "Cold-smoked cheese, poppers, rubs, seafood and everything else."),
 }
+
+# TikTok playlist name (lowercased) -> category slug. Unknown playlists go to "more".
+PLAYLIST_CATEGORIES = {"beef": "beef", "pork": "pork", "poultry": "poultry", "and more!": "more"}
+
+# Categories from before the playlists, mapped to the closest current one.
+LEGACY_CATEGORIES = {
+    "pastrami-cured": "beef",
+    "over-the-fire": "beef",
+    "cold-smoked": "more",
+    "apps-sides": "more",
+}
+
+
+def normalize_category(slug: str) -> str:
+    slug = LEGACY_CATEGORIES.get(slug, slug)
+    return slug if slug in CATEGORIES else "more"
 
 
 def category_name(slug: str) -> str:
     return CATEGORIES.get(slug, (slug.replace("-", " ").title(), ""))[0]
+
+
+# Columns added after a table first shipped: (table, column, DDL)
+_ADDED_COLUMNS = [
+    ("recipes", "in_playlist", "BOOLEAN NOT NULL DEFAULT 1"),
+    ("videos", "playlist", "VARCHAR(100)"),
+]
+
+
+def migrate_db():
+    """Add columns that create_all() can't add to existing tables, and remap old categories."""
+    with engine.begin() as conn:
+        for table, column, ddl in _ADDED_COLUMNS:
+            have = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
+            if have and column not in have:
+                conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+        for old, new in LEGACY_CATEGORIES.items():
+            conn.exec_driver_sql("UPDATE recipes SET category = ? WHERE category = ?", (new, old))
 
 
 def _dt(value):
@@ -39,7 +71,9 @@ def seed_content():
     try:
         if videos_file.exists():
             for v in json.loads(videos_file.read_text()):
-                row = db.get(models.Video, v["id"]) or models.Video(id=v["id"])
+                if db.get(models.Video, v["id"]):
+                    continue
+                row = models.Video(id=v["id"])
                 row.caption = v.get("caption", "")
                 row.posted_at = _dt(v.get("posted_at"))
                 row.duration = v.get("duration")
@@ -47,7 +81,7 @@ def seed_content():
                 row.views = v.get("views", 0)
                 row.likes = v.get("likes", 0)
                 row.recipe_slug = v.get("recipe_slug")
-                db.merge(row)
+                db.add(row)
 
         if recipes_file.exists():
             existing = {slug for (slug,) in db.query(models.Recipe.slug).all()}
@@ -57,7 +91,7 @@ def seed_content():
                 db.add(models.Recipe(
                     slug=r["slug"],
                     title=r["title"],
-                    category=r["category"],
+                    category=normalize_category(r["category"]),
                     summary=r.get("summary", ""),
                     article=r.get("article", ""),
                     ingredients=json.dumps(r.get("ingredients", [])),

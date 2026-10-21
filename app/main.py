@@ -40,7 +40,7 @@ from .routers import (
     admin_recipes,
     site,
 )
-from .content import seed_content
+from .content import migrate_db, seed_content
 
 settings = get_settings()
 
@@ -62,6 +62,7 @@ DEFAULT_SITE_SETTINGS = {
 
 def _initialize_db():
     Base.metadata.create_all(bind=engine)
+    migrate_db()
     db = SessionLocal()
     try:
         if not db.query(models.AdminUser).first():

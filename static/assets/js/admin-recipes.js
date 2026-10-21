@@ -52,8 +52,9 @@
   function render() {
     const reviewOnly = $("#recipes-review-only").checked;
     const rows = recipes.filter((r) => !reviewOnly || r.needs_review);
-    const pending = recipes.filter((r) => r.needs_review).length;
-    $("#recipes-count").textContent = `${recipes.length} recipes · ${pending} need review`;
+    const pending = recipes.filter((r) => r.needs_review && r.in_playlist).length;
+    const live = recipes.filter((r) => r.in_playlist && r.is_published).length;
+    $("#recipes-count").textContent = `${live} on the site · ${pending} need review · ${recipes.length - live} not shown`;
     $("#recipes-list").innerHTML = rows.map((r) => `
       <div class="recipe-row" data-id="${r.id}">
         <img src="${esc(r.image)}" alt="" loading="lazy">
@@ -64,6 +65,7 @@
             ${r.needs_review ? '<span class="badge badge-primary">Needs review</span>' : ""}
             ${r.is_featured ? '<span class="badge badge-muted">Featured</span>' : ""}
             ${r.is_published ? "" : '<span class="badge badge-muted">Hidden</span>'}
+            ${r.in_playlist ? "" : '<span class="badge badge-muted" title="None of its videos are in a TikTok playlist, so it isn\'t on the site">Not in a playlist</span>'}
           </div>
         </div>
         <a class="btn btn-ghost btn-sm" href="/recipe/${esc(r.slug)}" target="_blank" rel="noopener">View</a>
@@ -80,7 +82,43 @@
     } catch (err) {
       $("#recipes-list").innerHTML = `<p style="padding:22px">Failed to load recipes: ${esc(err.message)}</p>`;
     }
+    loadSync();
   }
+
+  // ── TikTok sync
+  let syncTimer = null;
+  function describeSync(s) {
+    if (s.running) return "Syncing with TikTok… new recipes can take a few minutes.";
+    const last = s.last;
+    if (!last) return "Recipes come from your TikTok playlists and sync automatically every 3 hours.";
+    const when = new Date(last.finished_at).toLocaleString();
+    if (last.error) return `Last sync ${when} failed: ${last.error}`;
+    const r = last.report;
+    const bits = [];
+    if (r.new_recipes.length) bits.push(`${r.new_recipes.length} new recipe(s)`);
+    if (r.attached.length) bits.push(`${r.attached.length} video(s) added to recipes`);
+    if (r.shown.length) bits.push(`${r.shown.length} recipe(s) back on the site`);
+    if (r.hidden.length) bits.push(`${r.hidden.length} recipe(s) taken off (not in a playlist)`);
+    if (r.errors.length) bits.push(`${r.errors.length} error(s)`);
+    return `Last sync ${when}: ${bits.join(", ") || "no changes"}. Runs automatically every 3 hours.`;
+  }
+  async function loadSync() {
+    try {
+      const s = await api("GET", "/api/admin/sync");
+      $("#sync-status").textContent = describeSync(s);
+      $("#sync-now").disabled = s.running;
+      clearTimeout(syncTimer);
+      if (s.running) syncTimer = setTimeout(async () => {
+        const again = await api("GET", "/api/admin/sync");
+        if (!again.running) loadRecipes(); else loadSync();
+      }, 5000);
+    } catch (_) { /* status is informational */ }
+  }
+  $("#sync-now").addEventListener("click", async () => {
+    $("#sync-now").disabled = true;
+    try { await api("POST", "/api/admin/sync"); } catch (err) { alert("Sync failed to start: " + err.message); }
+    loadSync();
+  });
 
   function openEditor(id) {
     editing = recipes.find((r) => r.id === id);

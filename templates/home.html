@@ -73,8 +73,8 @@
 {% endif %}
 
 {% if spotlight %}
-<section class="wrap block" aria-label="{{ categories[spotlight_cat][0] }} recipes">
-  {{ heading((categories[spotlight_cat][0], "Recipes"), link="/category/" ~ spotlight_cat, link_text="More " ~ categories[spotlight_cat][0] ~ " Recipes") }}
+<section class="wrap block" aria-label="{{ spotlight_meta.title|join(' ') }}">
+  {{ heading(spotlight_meta.title, link=spotlight_meta.link, link_text="More " ~ spotlight_meta.title|join(' ')) }}
   <div class="grid grid-4">
     {% for r in spotlight %}{{ card(r) }}{% endfor %}
   </div>

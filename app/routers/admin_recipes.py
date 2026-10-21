@@ -1,4 +1,7 @@
+import fcntl
 import json
+import subprocess
+import sys
 from datetime import datetime
 from typing import Optional
 
@@ -8,7 +11,8 @@ from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
 from ..content import CATEGORIES
-from ..database import get_db
+from ..database import BASE_DIR, get_db
+from ..tiktok_sync import LOCK_FILE, STATUS_FILE
 from .. import models
 
 router = APIRouter(prefix="/api/admin", tags=["admin-recipes"])
@@ -71,3 +75,32 @@ def update_recipe(
     db.commit()
     db.refresh(recipe)
     return _serialize(recipe)
+
+
+def _sync_running() -> bool:
+    if not LOCK_FILE.exists():
+        return False
+    with open(LOCK_FILE) as f:
+        try:
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return True
+        fcntl.flock(f, fcntl.LOCK_UN)
+    return False
+
+
+@router.get("/sync")
+def sync_status(_: models.AdminUser = Depends(get_current_user)):
+    last = json.loads(STATUS_FILE.read_text()) if STATUS_FILE.exists() else None
+    return {"running": _sync_running(), "last": last}
+
+
+@router.post("/sync")
+def start_sync(_: models.AdminUser = Depends(get_current_user)):
+    """Run the TikTok sync now, in the background (the same job cron runs)."""
+    if _sync_running():
+        return {"started": False, "running": True}
+    log = open(STATUS_FILE.parent / "tiktok_sync.log", "a")
+    subprocess.Popen([sys.executable, "-m", "app.tiktok_sync"], cwd=BASE_DIR,
+                     stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+    return {"started": True, "running": True}

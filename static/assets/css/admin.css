@@ -866,3 +866,5 @@ textarea { resize: vertical; min-height: 80px; }
   .recipe-grid { grid-template-columns: 1fr 1fr; }
   .recipe-row { padding: 12px 14px; flex-wrap: wrap; }
 }
+
+.sync-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0 0 14px; color: var(--text-muted, #a99); font-size: 0.9rem; }

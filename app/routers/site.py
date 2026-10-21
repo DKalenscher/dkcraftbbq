@@ -6,12 +6,12 @@ import re
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from ..content import CATEGORIES, category_name
+from ..content import CATEGORIES, LEGACY_CATEGORIES, category_name
 from ..database import BASE_DIR, get_db
 from .. import models
 
@@ -35,9 +35,10 @@ PER_PAGE = 12
 SEASONAL = {
     "title": ("Cold", "Weather Cooks"),
     "blurb": "Below 50°F the smoke tube comes out, and the long braises taste even better.",
-    "categories": ["cold-smoked", "pastrami-cured"],
-    "link": "/category/cold-smoked",
+    "keywords": ["cold", "braise", "pastrami", "chuck"],
+    "link": "/recipes",
 }
+SPOTLIGHT = {"title": ("Pastrami", "Recipes"), "keyword": "pastrami", "link": "/recipes?q=pastrami"}
 
 
 def _recipe_view(r: models.Recipe) -> dict:
@@ -55,7 +56,10 @@ def _recipe_view(r: models.Recipe) -> dict:
 
 
 def _published(db: Session):
-    return db.query(models.Recipe).filter(models.Recipe.is_published == True)
+    # Only recipes whose videos are in one of the TikTok playlists show on the site
+    return db.query(models.Recipe).filter(
+        models.Recipe.is_published == True, models.Recipe.in_playlist == True
+    )
 
 
 def _settings(db: Session) -> dict:
@@ -103,15 +107,14 @@ def home(request: Request, db: Session = Depends(get_db)):
     popular = _published(db).order_by(models.Recipe.views.desc()).limit(4).all()
     seasonal = (
         _published(db)
-        .filter(models.Recipe.category.in_(SEASONAL["categories"]))
+        .filter(or_(*[models.Recipe.title.ilike(f"%{k}%") for k in SEASONAL["keywords"]]))
         .order_by(models.Recipe.published_at.desc())
         .limit(5)
         .all()
     )
-    spotlight_cat = "pastrami-cured"
     spotlight = (
         _published(db)
-        .filter(models.Recipe.category == spotlight_cat)
+        .filter(models.Recipe.title.ilike(f"%{SPOTLIGHT['keyword']}%"))
         .order_by(models.Recipe.views.desc())
         .limit(4)
         .all()
@@ -127,7 +130,7 @@ def home(request: Request, db: Session = Depends(get_db)):
         seasonal=[_recipe_view(r) for r in seasonal],
         seasonal_meta=SEASONAL,
         spotlight=[_recipe_view(r) for r in spotlight],
-        spotlight_cat=spotlight_cat,
+        spotlight_meta=SPOTLIGHT,
         videos=videos,
         total_pages=max(1, math.ceil(total / PER_PAGE)),
     ))
@@ -180,6 +183,8 @@ def recipe_index(request: Request, page: int = 1, q: str = "", db: Session = Dep
 
 @router.get("/category/{slug}", response_class=HTMLResponse)
 def category_page(slug: str, request: Request, page: int = 1, db: Session = Depends(get_db)):
+    if slug in LEGACY_CATEGORIES:
+        return RedirectResponse(f"/category/{LEGACY_CATEGORIES[slug]}", status_code=301)
     if slug not in CATEGORIES:
         raise HTTPException(status_code=404)
     name, blurb = CATEGORIES[slug]
