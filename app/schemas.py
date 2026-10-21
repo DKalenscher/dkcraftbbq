@@ -147,6 +147,7 @@ class AnalyticsOverview(BaseModel):
     total_clicks: int
     clicks_today: int
     visits_today: int
+    pageviews_today: int = 0
     visits_this_week: int
     visits_this_month: int
 

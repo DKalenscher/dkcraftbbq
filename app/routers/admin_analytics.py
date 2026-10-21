@@ -2,9 +2,10 @@ import csv
 import io
 from datetime import datetime, timedelta
 from typing import Optional
+from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func, distinct
+from sqlalchemy import String, cast, func, distinct
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -12,6 +13,60 @@ from .. import models, schemas
 from ..auth import get_current_user
 
 router = APIRouter(prefix="/api/admin/analytics", tags=["admin-analytics"])
+
+# A visit is one browsing session. Every page in the site records a page view,
+# so counting rows would count each click around the site as a new visit.
+# Rows from before session ids existed count as their own visit.
+VISIT_KEY = func.coalesce(models.PageView.session_id, cast(models.PageView.id, String))
+OWN_HOSTS = ("dkcraftbbq.com",)
+SOURCE_NAMES = {
+    "tiktok.com": "TikTok",
+    "instagram.com": "Instagram",
+    "facebook.com": "Facebook",
+    "t.co": "X / Twitter",
+    "x.com": "X / Twitter",
+    "youtube.com": "YouTube",
+    "reddit.com": "Reddit",
+    "pinterest.com": "Pinterest",
+    "linktr.ee": "Linktree",
+}
+UTM_NAMES = {"ig": "Instagram", "instagram": "Instagram", "tiktok": "TikTok",
+             "fb": "Facebook", "facebook": "Facebook", "yt": "YouTube", "youtube": "YouTube"}
+
+
+def _count_visits(db: Session, since: Optional[datetime] = None) -> int:
+    q = db.query(func.count(distinct(VISIT_KEY)))
+    if since is not None:
+        q = q.filter(models.PageView.timestamp >= since)
+    return q.scalar() or 0
+
+
+def _host(url: str) -> str:
+    host = (urlparse(url).hostname or "").lower()
+    return host[4:] if host.startswith("www.") else host
+
+
+def _is_internal(referrer: Optional[str]) -> bool:
+    host = _host(referrer) if referrer else ""
+    return any(host == h or host.endswith("." + h) for h in OWN_HOSTS)
+
+
+def _source_label(utm_source: Optional[str], referrer: Optional[str]) -> str:
+    if utm_source:
+        return UTM_NAMES.get(utm_source.strip().lower(), utm_source)
+    if not referrer or _is_internal(referrer):
+        return "Direct"
+    host = _host(referrer)
+    if not host:
+        return "Direct"
+    for domain, name in SOURCE_NAMES.items():
+        if host == domain or host.endswith("." + domain):
+            return name
+    if host.startswith("google.") or ".google." in host:
+        return "Google"
+    if host.startswith("bing.") or host == "duckduckgo.com":
+        return "Search"
+    return host
 
 
 @router.get("/overview", response_model=schemas.AnalyticsOverview)
@@ -24,27 +79,25 @@ def get_overview(
     week_start = today_start - timedelta(days=now.weekday())
     month_start = today_start.replace(day=1)
 
-    total_visits = db.query(func.count(models.PageView.id)).scalar() or 0
+    total_visits = _count_visits(db)
     unique_visitors = db.query(func.count(distinct(models.PageView.ip_hash))).scalar() or 0
     total_clicks = db.query(func.count(models.LinkClick.id)).scalar() or 0
-    visits_today = db.query(func.count(models.PageView.id)).filter(
+    visits_today = _count_visits(db, today_start)
+    pageviews_today = db.query(func.count(models.PageView.id)).filter(
         models.PageView.timestamp >= today_start
     ).scalar() or 0
     clicks_today = db.query(func.count(models.LinkClick.id)).filter(
         models.LinkClick.timestamp >= today_start
     ).scalar() or 0
-    visits_this_week = db.query(func.count(models.PageView.id)).filter(
-        models.PageView.timestamp >= week_start
-    ).scalar() or 0
-    visits_this_month = db.query(func.count(models.PageView.id)).filter(
-        models.PageView.timestamp >= month_start
-    ).scalar() or 0
+    visits_this_week = _count_visits(db, week_start)
+    visits_this_month = _count_visits(db, month_start)
 
     return schemas.AnalyticsOverview(
         total_visits=total_visits,
         unique_visitors=unique_visitors,
         total_clicks=total_clicks,
         visits_today=visits_today,
+        pageviews_today=pageviews_today,
         clicks_today=clicks_today,
         visits_this_week=visits_this_week,
         visits_this_month=visits_this_month,
@@ -62,7 +115,7 @@ def get_daily_trend(
     visits_raw = (
         db.query(
             func.date(models.PageView.timestamp).label("date"),
-            func.count(models.PageView.id).label("count"),
+            func.count(distinct(VISIT_KEY)).label("count"),
         )
         .filter(models.PageView.timestamp >= start)
         .group_by(func.date(models.PageView.timestamp))
@@ -118,17 +171,23 @@ def get_traffic_sources(
 ):
     start = datetime.utcnow() - timedelta(days=days)
     rows = (
-        db.query(
-            func.coalesce(models.PageView.utm_source, models.PageView.referrer, "Direct").label("source"),
-            func.count(models.PageView.id).label("count"),
-        )
+        db.query(VISIT_KEY.label("visit"), models.PageView.utm_source, models.PageView.referrer)
         .filter(models.PageView.timestamp >= start)
-        .group_by("source")
-        .order_by(func.count(models.PageView.id).desc())
-        .limit(20)
+        .order_by(models.PageView.timestamp, models.PageView.id)
         .all()
     )
-    return [schemas.TrafficSource(source=r.source or "Direct", count=r.count) for r in rows]
+    # One source per visit: the first page view that came from outside the site.
+    # A visit with no outside referrer counts as Direct.
+    first: dict[str, str] = {}
+    for r in rows:
+        label = _source_label(r.utm_source, r.referrer)
+        if r.visit not in first or (first[r.visit] == "Direct" and label != "Direct"):
+            first[r.visit] = label
+    counts: dict[str, int] = {}
+    for label in first.values():
+        counts[label] = counts.get(label, 0) + 1
+    top = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:20]
+    return [schemas.TrafficSource(source=k, count=v) for k, v in top]
 
 
 @router.get("/geo", response_model=list[schemas.GeoStat])
@@ -141,12 +200,12 @@ def get_geo_stats(
     rows = (
         db.query(
             models.PageView.country,
-            func.count(models.PageView.id).label("count"),
+            func.count(distinct(VISIT_KEY)).label("count"),
         )
         .filter(models.PageView.timestamp >= start)
         .filter(models.PageView.country != None)
         .group_by(models.PageView.country)
-        .order_by(func.count(models.PageView.id).desc())
+        .order_by(func.count(distinct(VISIT_KEY)).desc())
         .limit(20)
         .all()
     )
@@ -164,12 +223,12 @@ def get_utm_campaigns(
         db.query(
             models.PageView.utm_campaign,
             models.PageView.utm_source,
-            func.count(models.PageView.id).label("count"),
+            func.count(distinct(VISIT_KEY)).label("count"),
         )
         .filter(models.PageView.timestamp >= start)
         .filter(models.PageView.utm_campaign != None)
         .group_by(models.PageView.utm_campaign, models.PageView.utm_source)
-        .order_by(func.count(models.PageView.id).desc())
+        .order_by(func.count(distinct(VISIT_KEY)).desc())
         .limit(20)
         .all()
     )

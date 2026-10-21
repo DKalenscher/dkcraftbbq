@@ -193,6 +193,7 @@
       document.getElementById("stat-unique").textContent = fmt(overview.unique_visitors);
       document.getElementById("stat-clicks").textContent = fmt(overview.total_clicks);
       document.getElementById("stat-today").textContent = fmt(overview.visits_today);
+      document.getElementById("stat-today-pages").textContent = `${fmt(overview.pageviews_today)} pages viewed`;
       document.getElementById("stat-week").textContent = fmt(overview.visits_this_week);
       document.getElementById("stat-month").textContent = fmt(overview.visits_this_month);
 
