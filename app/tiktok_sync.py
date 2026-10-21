@@ -1,22 +1,20 @@
-"""Keep the site in step with TikTok. Run it on a schedule:
+"""Keep the site in step with TikTok. Runs on the Pi from cron:
 
-    python3 -m app.tiktok_sync            # normal run
-    python3 -m app.tiktok_sync --dry-run  # report what would change, write nothing
+    python3 -m app.tiktok_sync                   # sync playlists and videos
+    python3 -m app.tiktok_sync --dry-run         # report what would change, write nothing
+    python3 -m app.tiktok_sync --export-pending  # sync, then print videos that need a recipe (JSON)
+    python3 -m app.tiktok_sync --apply FILE      # save a recipe drafted by tools/pc_sync.py
 
-Each run:
-1. Reads the TikTok playlists (Beef, Pork, Poultry, and more!). Only recipes
-   with a video in a playlist show on the site, and a recipe's category
-   follows its playlist.
-2. Refreshes the Videos page from the latest posts (new videos, view counts).
-3. For each playlist video that isn't part of a recipe yet, asks Claude whether
-   it continues an existing recipe or is a new one. A new recipe is drafted from
-   the caption and video frames, published with "Needs review" on, and given a
-   photo picked from the video.
+Each sync reads the TikTok playlists (Beef, Pork, Poultry, and more!). Only
+recipes with a video in a playlist show on the site, and a recipe's category
+follows its playlist. It also refreshes the Videos page from the latest posts.
 
-Needs ANTHROPIC_API_KEY in .env for step 3; without it, steps 1 and 2 still run.
+Playlist videos that aren't part of a recipe yet are left pending. Writing
+recipes needs Claude, which runs on the PC (tools/pc_sync.py): it fetches the
+pending list over SSH, drafts with Claude Code, and sends the result back
+with --apply.
 """
 import argparse
-import base64
 import fcntl
 import json
 import logging
@@ -203,25 +201,24 @@ def extract_frames(video: Path, workdir: Path) -> list[Path]:
     return frames
 
 
-def save_hero(video: Path, frame_index: int, slug: str, workdir: Path) -> str | None:
+def save_hero(video: Path, frame_index: int, out: Path, workdir: Path) -> bool:
     """Full-resolution frame, letterbox bars removed, cropped to 3:4 at 720x960."""
     dur = _duration(video)
     pct = FRAME_POINTS[max(0, min(frame_index, len(FRAME_POINTS) - 1))]
     raw = workdir / "hero.png"
     _ffmpeg("-ss", f"{dur * pct / 100:.2f}", "-i", str(video), "-frames:v", "1", str(raw))
     if not raw.exists():
-        return None
+        return False
     cd = subprocess.run([settings.FFMPEG_PATH, "-i", str(raw), "-vf", "cropdetect=limit=24:round=2",
                          "-f", "null", "-"], capture_output=True, text=True).stderr
     crops = re.findall(r"crop=(\d+:\d+:\d+:\d+)", cd)
     vf = (f"crop={crops[-1]}," if crops else "") + "crop='min(iw,ih*3/4)':'min(ih,iw*4/3)',scale=720:960"
-    out = MEDIA_DIR / "recipes" / f"{slug}.jpg"
     out.parent.mkdir(parents=True, exist_ok=True)
     _ffmpeg("-i", str(raw), "-vf", vf, "-q:v", "4", str(out))
-    return f"/uploads/recipes/{slug}.jpg" if out.exists() else None
+    return out.exists()
 
 
-# ── Claude ──────────────────────────────────────────────────────────────────
+# ── Recipe drafting (prompts used by tools/pc_sync.py) ──────────────────────────────────────────────────────────────────
 
 STYLE_GUIDE = """You write recipes for DKCraftBBQ, a backyard BBQ site. Every recipe comes from one of the
 pitmaster's TikTok videos. Write in his voice: first person, plain and friendly, no hype words, no
@@ -243,71 +240,63 @@ Rules:
 - Ingredients are grouped (e.g. "Rub", "Brine"); use an empty group name when there's only one group.
 """
 
-DECIDE_TOOL = {
-    "name": "decide",
-    "description": "Decide what to do with a new playlist video.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "action": {"type": "string", "enum": ["attach", "new", "skip"],
-                       "description": "attach: another part of an existing recipe's cook. new: a recipe of its own. "
-                                      "skip: no recipe content at all (e.g. a channel announcement)."},
-            "slug": {"type": "string", "description": "For attach: the existing recipe's slug."},
-            "reason": {"type": "string"},
-        },
-        "required": ["action", "reason"],
+DECIDE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "action": {"type": "string", "enum": ["attach", "new", "skip"],
+                   "description": "attach: another part of an existing recipe's cook. new: a recipe of its own. "
+                                  "skip: no recipe content at all (e.g. a channel announcement)."},
+        "slug": {"type": "string", "description": "For attach: the existing recipe's slug."},
+        "reason": {"type": "string"},
     },
+    "required": ["action", "reason"],
 }
 
-RECIPE_TOOL = {
-    "name": "save_recipe",
-    "description": "Save the drafted recipe.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "title": {"type": "string"},
-            "summary": {"type": "string", "description": "One or two sentences for cards and search results."},
-            "article": {"type": "string"},
-            "ingredients": {"type": "array", "items": {
-                "type": "object",
-                "properties": {"group": {"type": "string"}, "items": {"type": "array", "items": {"type": "string"}}},
-                "required": ["group", "items"]}},
-            "steps": {"type": "array", "items": {"type": "string"}},
-            "notes": {"type": "array", "items": {"type": "string"}},
-            "prep_time": {"type": "string"},
-            "cook_time": {"type": "string"},
-            "total_time": {"type": "string"},
-            "yield_text": {"type": "string"},
-            "method": {"type": "string", "description": "e.g. Smoked, Grilled, Smoked & Braised, Cold Smoked"},
-            "wood": {"type": "string", "description": "Wood or pellets used, or 'Your choice' if not stated."},
-            "review_notes": {"type": "string"},
-            "hero_frame": {"type": "integer", "description": "Index of the frame that makes the best photo: "
-                           "finished, appetizing food, ideally sliced or plated; avoid raw meat and heavy text."},
-        },
-        "required": ["title", "summary", "article", "ingredients", "steps", "notes", "review_notes", "hero_frame"],
+RECIPE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string"},
+        "summary": {"type": "string", "description": "One or two sentences for cards and search results."},
+        "article": {"type": "string"},
+        "ingredients": {"type": "array", "items": {
+            "type": "object",
+            "properties": {"group": {"type": "string"}, "items": {"type": "array", "items": {"type": "string"}}},
+            "required": ["group", "items"]}},
+        "steps": {"type": "array", "items": {"type": "string"}},
+        "notes": {"type": "array", "items": {"type": "string"}},
+        "prep_time": {"type": "string"},
+        "cook_time": {"type": "string"},
+        "total_time": {"type": "string"},
+        "yield_text": {"type": "string"},
+        "method": {"type": "string", "description": "e.g. Smoked, Grilled, Smoked & Braised, Cold Smoked"},
+        "wood": {"type": "string", "description": "Wood or pellets used, or 'Your choice' if not stated."},
+        "review_notes": {"type": "string"},
+        "hero_frame": {"type": "integer", "description": "Index of the frame that makes the best photo: "
+                       "finished, appetizing food, ideally sliced or plated; avoid raw meat and heavy text."},
     },
+    "required": ["title", "summary", "article", "ingredients", "steps", "notes", "review_notes", "hero_frame"],
 }
 
 
-def claude(tool: dict, content: list) -> dict:
-    r = httpx.post(
-        "https://api.anthropic.com/v1/messages",
-        headers={"x-api-key": settings.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01"},
-        json={
-            "model": settings.CLAUDE_MODEL,
-            "max_tokens": 8000,
-            "system": STYLE_GUIDE,
-            "tools": [tool],
-            "tool_choice": {"type": "tool", "name": tool["name"]},
-            "messages": [{"role": "user", "content": content}],
-        },
-        timeout=300,
+def decide_prompt(post: dict, category: str, catalog: str) -> str:
+    return (
+        f"A new video was added to the {CATEGORIES[category][0]} playlist.\n\n"
+        f"Caption:\n{post['caption']}\n\n"
+        "Existing recipes (slug: title (category)):\n" + catalog + "\n\n"
+        "Is this video another part of one of these cooks (prep, progress, results, slicing, a follow-up "
+        "of the same dish), a new recipe, or not a recipe at all? Only attach when it's clearly the same dish."
     )
-    r.raise_for_status()
-    for block in r.json()["content"]:
-        if block.get("type") == "tool_use":
-            return block["input"]
-    raise RuntimeError("Claude didn't return a result")
+
+
+def draft_prompt(post: dict, category: str, examples: str, frames: list[str]) -> str:
+    listing = "\n".join(f"- Frame {i}: {name}" for i, name in enumerate(frames))
+    return (
+        f"Draft a recipe for this {CATEGORIES[category][0]} video.\n\n"
+        f"Caption:\n{post['caption']}\n\n"
+        f"Frames from the video, in order. Read every one: use on-screen text or visible steps as facts, "
+        f"and pick the best one for the photo (hero_frame is its index).\n{listing}\n\n"
+        "Two published recipes, for voice and level of detail:\n" + examples
+    )
 
 
 def _recipe_catalog(db) -> str:
@@ -315,16 +304,6 @@ def _recipe_catalog(db) -> str:
     for r in db.query(models.Recipe).order_by(models.Recipe.published_at.desc()):
         lines.append(f"- {r.slug}: {r.title} ({r.category})")
     return "\n".join(lines)
-
-
-def decide(db, post: dict, category: str) -> dict:
-    return claude(DECIDE_TOOL, [{"type": "text", "text": (
-        f"A new video was added to the {CATEGORIES[category][0]} playlist.\n\n"
-        f"Caption:\n{post['caption']}\n\n"
-        "Existing recipes (slug: title (category)):\n" + _recipe_catalog(db) + "\n\n"
-        "Is this video another part of one of these cooks (prep, progress, results, slicing, a follow-up "
-        "of the same dish), a new recipe, or not a recipe at all? Only attach when it's clearly the same dish."
-    )}])
 
 
 def _examples(db) -> str:
@@ -342,19 +321,10 @@ def _examples(db) -> str:
     return "\n\n".join(out)
 
 
-def draft_recipe(db, post: dict, category: str, frames: list[Path]) -> dict:
-    content: list = [{"type": "text", "text": (
-        f"Draft a recipe for this {CATEGORIES[category][0]} video.\n\n"
-        f"Caption:\n{post['caption']}\n\n"
-        f"{len(frames)} frames from the video follow, in order (index 0 to {len(frames) - 1}). "
-        "Use any on-screen text or visible steps as facts, and pick the best one for the photo.\n\n"
-        "Two published recipes, for voice and level of detail:\n" + _examples(db)
-    )}]
-    for i, f in enumerate(frames):
-        content.append({"type": "text", "text": f"Frame {i}:"})
-        content.append({"type": "image", "source": {
-            "type": "base64", "media_type": "image/jpeg", "data": base64.b64encode(f.read_bytes()).decode()}})
-    return claude(RECIPE_TOOL, content)
+def _skipped(db) -> set[str]:
+    """Playlist videos Claude judged not to be recipes, so they aren't asked about again."""
+    row = db.get(models.SiteSetting, "tiktok_skipped_videos")
+    return set(json.loads(row.value)) if row and row.value else set()
 
 
 def _slugify(title: str, db) -> str:
@@ -386,7 +356,8 @@ def _upsert_video(db, client, post: dict, playlist: str | None, dry: bool) -> bo
 
 
 def sync(dry: bool = False) -> dict:
-    report = {"new_videos": 0, "attached": [], "new_recipes": [], "hidden": [], "shown": [], "errors": []}
+    report = {"new_videos": 0, "attached": [], "new_recipes": [], "hidden": [], "shown": [],
+              "errors": [], "pending": []}
     db = SessionLocal()
     client = httpx.Client(headers={"User-Agent": UA}, timeout=30, follow_redirects=True)
     try:
@@ -413,36 +384,26 @@ def sync(dry: bool = False) -> dict:
 
         # Existing recipes: visibility and category follow the playlists
         recipes = db.query(models.Recipe).all()
-        owner = {}  # video id -> recipe
-        for r in recipes:
-            for vid in json.loads(r.video_ids or "[]"):
-                owner.setdefault(vid, r)
+        owned = {vid for r in recipes for vid in json.loads(r.video_ids or "[]")}
         for r in recipes:
             _refresh_recipe(db, r, in_playlist, report, dry)
-
-        # Playlist videos that aren't part of any recipe yet, oldest first
-        pending = sorted((v for v in in_playlist if v not in owner),
-                         key=lambda v: playlist_posts[v]["posted_at"] or datetime.min)
-        if pending and dry:
-            report["pending"] = pending  # dry runs don't call Claude
-            pending = []
-        if pending and not settings.ANTHROPIC_API_KEY:
-            log.warning("%d new playlist video(s) but ANTHROPIC_API_KEY isn't set; skipping recipe drafts",
-                        len(pending))
-            pending = []
-        for vid in pending:
-            try:
-                _handle_new_video(db, client, playlist_posts[vid], in_playlist, report, dry)
-            except Exception as e:  # one bad video shouldn't stop the rest
-                db.rollback()
-                log.exception("video %s failed", vid)
-                report["errors"].append(f"{vid}: {e}")
         if not dry:
             db.commit()
+
+        # Playlist videos that aren't part of any recipe yet, oldest first
+        skipped = _skipped(db)
+        pending = sorted((v for v in in_playlist if v not in owned and v not in skipped),
+                         key=lambda v: playlist_posts[v]["posted_at"] or datetime.min)
+        report["pending"] = [{"post": {**playlist_posts[v], "posted_at": _iso(playlist_posts[v]["posted_at"])},
+                              "category": in_playlist[v]} for v in pending]
     finally:
         client.close()
         db.close()
     return report
+
+
+def _iso(dt):
+    return dt.isoformat() if dt else None
 
 
 def _refresh_recipe(db, r, in_playlist: dict, report: dict, dry: bool):
@@ -456,65 +417,100 @@ def _refresh_recipe(db, r, in_playlist: dict, report: dict, dry: bool):
     r.in_playlist = visible
     if cats:
         r.category = Counter(cats).most_common(1)[0][0]
-    views = sum(v.views for v in db.query(models.Video).filter(models.Video.id.in_(vids)))
+    videos = db.query(models.Video).filter(models.Video.id.in_(vids)).all()
+    views = sum(v.views for v in videos)
     if views:
         r.views = views
-    for v in db.query(models.Video).filter(models.Video.id.in_(vids)):
+    for v in videos:
         v.recipe_slug = r.slug
 
 
-def _handle_new_video(db, client, post: dict, in_playlist: dict, report: dict, dry: bool):
-    category = in_playlist[post["id"]]
-    choice = decide(db, post, category)
-    log.info("video %s -> %s %s (%s)", post["id"], choice["action"], choice.get("slug", ""), choice["reason"])
-    if choice["action"] == "skip":
-        return
-    if choice["action"] == "attach":
-        r = db.query(models.Recipe).filter(models.Recipe.slug == choice.get("slug")).first()
-        if r:
-            report["attached"].append(f"{post['id']} -> {r.slug}")
-            if not dry:
-                r.video_ids = json.dumps(json.loads(r.video_ids or "[]") + [post["id"]])
-                _refresh_recipe(db, r, in_playlist, report, dry)
-                db.commit()
-            return
-        log.warning("Claude picked unknown recipe %r; drafting a new one instead", choice.get("slug"))
+def apply(result: dict) -> dict:
+    """Save one drafted result from the PC:
+    {"post": {...}, "category": str, "decision": {...}, "recipe": {...} | null, "image": path | null}
+    """
+    report = {"attached": [], "new_recipes": [], "hidden": [], "shown": [], "errors": []}
+    post, category, choice = result["post"], result["category"], result["decision"]
+    db = SessionLocal()
+    try:
+        if any(post["id"] in json.loads(r.video_ids or "[]") for r in db.query(models.Recipe)):
+            log.info("video %s already belongs to a recipe; nothing to do", post["id"])
+            return report
+        # Playlists as of the last sync, so attaching doesn't miscount a recipe's other videos
+        in_playlist = {v.id: v.playlist for v in db.query(models.Video).filter(models.Video.playlist != None)}
+        in_playlist.setdefault(post["id"], category)
 
-    with tempfile.TemporaryDirectory() as tmp:
-        work = Path(tmp)
-        video = download_video(post["id"], work)
-        frames = extract_frames(video, work) if video else []
-        d = draft_recipe(db, post, category, frames)
+        if choice["action"] == "skip":
+            log.info("video %s skipped: %s", post["id"], choice.get("reason"))
+            skipped = _skipped(db) | {post["id"]}
+            db.merge(models.SiteSetting(key="tiktok_skipped_videos", value=json.dumps(sorted(skipped))))
+            db.commit()
+            return report
+        if choice["action"] == "attach":
+            r = db.query(models.Recipe).filter(models.Recipe.slug == choice.get("slug")).first()
+            if not r:
+                raise ValueError(f"unknown recipe {choice.get('slug')!r}")
+            r.video_ids = json.dumps(json.loads(r.video_ids or "[]") + [post["id"]])
+            _refresh_recipe(db, r, in_playlist, report, False)
+            db.commit()
+            report["attached"].append(f"{post['id']} -> {r.slug}")
+            return report
+
+        d = result["recipe"]
         slug = _slugify(d["title"], db)
+        image = None
+        if result.get("image") and Path(result["image"]).exists():
+            dest = MEDIA_DIR / "recipes" / f"{slug}.jpg"
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(result["image"], dest)
+            image = f"/uploads/recipes/{slug}.jpg"
+        v = db.get(models.Video, post["id"])
+        if not image and v:
+            image = v.thumb
+        db.add(models.Recipe(
+            slug=slug, title=d["title"], category=category,
+            summary=d["summary"], article=d["article"],
+            ingredients=json.dumps(d["ingredients"]), steps=json.dumps(d["steps"]), notes=json.dumps(d["notes"]),
+            prep_time=d.get("prep_time"), cook_time=d.get("cook_time"), total_time=d.get("total_time"),
+            yield_text=d.get("yield_text"), method=d.get("method"), wood=d.get("wood"),
+            image=image, video_ids=json.dumps([post["id"]]), views=int(post.get("views") or 0),
+            needs_review=True, review_notes="Drafted automatically from the TikTok caption. " + d["review_notes"],
+            is_published=True, is_featured=False, in_playlist=True,
+            published_at=datetime.fromisoformat(post["posted_at"]) if post.get("posted_at") else datetime.now(),
+        ))
+        if v:
+            v.recipe_slug = slug
+        db.commit()
         report["new_recipes"].append(slug)
-        if dry:
-            return
-        image = save_hero(video, d.get("hero_frame", 0), slug, work) if video else None
-        if not image:
-            v = db.get(models.Video, post["id"])
-            image = v.thumb if v else None
-    db.add(models.Recipe(
-        slug=slug, title=d["title"], category=category,
-        summary=d["summary"], article=d["article"],
-        ingredients=json.dumps(d["ingredients"]), steps=json.dumps(d["steps"]), notes=json.dumps(d["notes"]),
-        prep_time=d.get("prep_time"), cook_time=d.get("cook_time"), total_time=d.get("total_time"),
-        yield_text=d.get("yield_text"), method=d.get("method"), wood=d.get("wood"),
-        image=image, video_ids=json.dumps([post["id"]]), views=int(post["views"] or 0),
-        needs_review=True, review_notes="Drafted automatically from the TikTok caption. " + d["review_notes"],
-        is_published=True, is_featured=False, in_playlist=True,
-        published_at=post["posted_at"] or datetime.now(),
-    ))
-    v = db.get(models.Video, post["id"])
-    if v:
-        v.recipe_slug = slug
-    db.commit()
+        return report
+    finally:
+        db.close()
+
+
+def context() -> dict:
+    """What the PC needs to draft: existing recipes and two examples of the house style."""
+    db = SessionLocal()
+    try:
+        return {"catalog": _recipe_catalog(db), "examples": _examples(db)}
+    finally:
+        db.close()
+
+
+def _write_status(status: dict):
+    status["finished_at"] = datetime.now().isoformat(timespec="seconds")
+    STATUS_FILE.write_text(json.dumps(status, indent=1))
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--dry-run", action="store_true", help="report what would change, write nothing")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="report what would change, write nothing")
+    mode.add_argument("--export-pending", action="store_true",
+                      help="sync, then print pending videos and drafting context as JSON on stdout")
+    mode.add_argument("--apply", metavar="FILE", help="save a drafted result (JSON) from tools/pc_sync.py")
     args = ap.parse_args()
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
+                        stream=sys.stderr)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     for tool in (settings.YTDLP_PATH, settings.FFMPEG_PATH, settings.FFPROBE_PATH):
         if not shutil.which(tool):
@@ -526,20 +522,33 @@ def main():
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
         log.info("another sync is running; exiting")
-        return
+        sys.exit(75)  # EX_TEMPFAIL: the PC script retries next time
     models.Base.metadata.create_all(bind=engine)  # same schema setup the web app does on start
     migrate_db()
-    status = {"started_at": datetime.now().isoformat(timespec="seconds"), "dry_run": args.dry_run}
+
+    status = {"started_at": datetime.now().isoformat(timespec="seconds")}
+    if args.apply:
+        try:
+            report = apply(json.loads(Path(args.apply).read_text()))
+        except Exception as e:
+            log.exception("apply failed")
+            report = {"attached": [], "new_recipes": [], "hidden": [], "shown": [], "errors": [str(e)]}
+        log.info("applied: %s", json.dumps(report))
+        status.update(ok=not report["errors"], report=report, source="pc")
+        _write_status(status)
+        sys.exit(0 if status["ok"] else 1)
+
     try:
-        status["report"] = sync(dry=args.dry_run)
-        status["ok"] = not status["report"]["errors"]
-        log.info("result: %s", json.dumps(status["report"]))
+        report = sync(dry=args.dry_run)
+        status.update(ok=True, report=report)
+        log.info("result: %s", json.dumps({**report, "pending": [p["post"]["id"] for p in report["pending"]]}))
     except Exception as e:
         log.exception("sync failed")
         status.update(ok=False, error=str(e))
-    status["finished_at"] = datetime.now().isoformat(timespec="seconds")
     if not args.dry_run:
-        STATUS_FILE.write_text(json.dumps(status, indent=1))
+        _write_status(status)
+    if args.export_pending and status["ok"]:
+        print(json.dumps({"pending": status["report"]["pending"], **context()}))
     if not status["ok"]:
         sys.exit(1)
 

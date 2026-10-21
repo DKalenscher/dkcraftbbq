@@ -30,8 +30,7 @@ class Settings(BaseSettings):
     YTDLP_PATH: str = "yt-dlp"
     FFMPEG_PATH: str = "ffmpeg"
     FFPROBE_PATH: str = "ffprobe"
-    ANTHROPIC_API_KEY: str = ""
-    CLAUDE_MODEL: str = "claude-opus-5-5"
+
 
     class Config:
         env_file = ".env"

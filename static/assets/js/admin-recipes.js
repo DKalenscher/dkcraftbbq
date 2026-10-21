@@ -100,6 +100,7 @@
     if (r.shown.length) bits.push(`${r.shown.length} recipe(s) back on the site`);
     if (r.hidden.length) bits.push(`${r.hidden.length} recipe(s) taken off (not in a playlist)`);
     if (r.errors.length) bits.push(`${r.errors.length} error(s)`);
+    if (r.pending && r.pending.length) bits.push(`${r.pending.length} new video(s) waiting for your PC to write the recipe`);
     return `Last sync ${when}: ${bits.join(", ") || "no changes"}. Runs automatically every 3 hours.`;
   }
   async function loadSync() {
