@@ -43,10 +43,13 @@ RENAMED_RECIPES = {
 # Admin can replace a recipe's automatic picks with its own (Recipe.gear_ids).
 GEAR_RULES = [
     ("holy cow", 25),            # Meat Church Holy Cow
-    ("the gospel", 47),          # Meat Church The Gospel (not Holy Gospel)
-    ("honey hog", 29),           # Meat Church Honey Hog 2-Pack
+    ("the gospel", 47),          # Meat Church The Gospel All-Purpose (not Holy Gospel or Gospel Pork)
+    ("texas sugar", 49),         # Meat Church Texas Sugar
+    ("honey hog", 53),           # Meat Church Honey Hog
     ("whomp", 33),               # Meat Mitch WHOMP!
     ("bachan's", 48),            # Bachan's Japanese Barbecue Sauce
+    ("kinder's lemon", 50),      # Kinder's Lemon Butter Garlic
+    ("kinder's garlic butter", 51),  # Kinder's Cowboy Butter
     ("curing salt", 6),          # SPQR Prague Powder #1
     ("pickling spice", 5),       # Badia pickling spice
     ("bear mountain", 11),       # Bear Mountain pellets
@@ -56,16 +59,33 @@ GEAR_RULES = [
     ("porter road", 24),
     ("snake river", 23),
 ]
-GEAR_AUTO_LIMIT = 4
+GEAR_AUTO_LIMIT = 6
+
+# Every hot smoke gets Bear Mountain pellets, and every cook done to a temperature
+# gets the ThermoPop. Cold smokes and plain rubs get neither.
+GEAR_SMOKE_PELLETS = 11      # Bear Mountain Hickory Pellets
+GEAR_THERMOMETER = 9         # ThermoPop 2
+# Hot cooks that go by look and feel rather than a temperature
+NO_THERMOMETER = {
+    "st-louis-ribs", "bacon-wrapped-jalapeno-poppers", "galbi-korean-short-ribs",
+    "smoked-braised-oxtails", "beef-belly-pastrami-burnt-ends",
+}
 
 
-def auto_gear_ids(ingredients: list, notes: list, wood) -> list:
-    """Shop Link ids the recipe text mentions, per GEAR_RULES (before the limit)."""
+def auto_gear_ids(ingredients: list, notes: list, wood, method=None, slug=None) -> list:
+    """Shop Link ids for a recipe: the products its text mentions (GEAR_RULES order), then the
+    pellets and thermometer every applicable cook gets. Before the limit."""
     text = "\n".join([i for g in ingredients for i in g.get("items", [])] + notes + [wood or ""]).lower()
     ids = []
     for phrase, link_id in GEAR_RULES:
         if phrase in text and link_id not in ids:
             ids.append(link_id)
+    how = (method or "").lower()
+    hot = bool(how) and "cold smoke" not in how and how != "rub"
+    if hot and "smok" in how and GEAR_SMOKE_PELLETS not in ids:
+        ids.append(GEAR_SMOKE_PELLETS)
+    if hot and slug not in NO_THERMOMETER and GEAR_THERMOMETER not in ids:
+        ids.append(GEAR_THERMOMETER)
     return ids
 
 

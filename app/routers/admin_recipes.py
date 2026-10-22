@@ -47,7 +47,7 @@ def _serialize(r: models.Recipe) -> dict:
     for f in _JSON_FIELDS:
         data[f] = json.loads(data[f] or "[]")
     data["gear_ids"] = json.loads(r.gear_ids) if r.gear_ids is not None else None
-    data["auto_gear_ids"] = auto_gear_ids(data["ingredients"], data["notes"], r.wood)[:GEAR_AUTO_LIMIT]
+    data["auto_gear_ids"] = auto_gear_ids(data["ingredients"], data["notes"], r.wood, r.method, r.slug)[:GEAR_AUTO_LIMIT]
     for f in ("published_at", "created_at", "updated_at"):
         if isinstance(data[f], datetime):
             data[f] = data[f].isoformat()

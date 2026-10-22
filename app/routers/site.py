@@ -234,7 +234,7 @@ def _recipe_gear(db: Session, r: models.Recipe, ingredients: list, notes: list):
     if r.gear_ids is not None:
         ids = json.loads(r.gear_ids)
     else:
-        ids = auto_gear_ids(ingredients, notes, r.wood)
+        ids = auto_gear_ids(ingredients, notes, r.wood, r.method, r.slug)
     found = {l.id: l for l in db.query(models.Link).filter(models.Link.id.in_(ids), models.Link.is_visible == True).all()} if ids else {}
     gear = [found[i] for i in ids if i in found]
     if r.gear_ids is None:
