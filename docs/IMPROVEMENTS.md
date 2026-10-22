@@ -26,6 +26,17 @@ Recipes (the "What was filled in" box lists exactly what was added) and untick
 - Idea: a way to un-skip a video Claude judged not to be a recipe (today it has
   to be removed from the `tiktok_skipped_videos` site setting by hand).
 
+### Time on site (analytics)
+Today analytics only logs page loads, so there's no way to tell how long anyone
+stays (about 80% of visits are a single page). Plan:
+- In `static/assets/js/site.js`, count seconds while the page is visible (pause on
+  tab/app switch) and send them with `navigator.sendBeacon` on `pagehide`.
+- Store on the page view (new `page_views.engaged_seconds`, plus optional
+  `max_scroll_pct`) via `_ADDED_COLUMNS`. Same anonymity and home-IP exclusion as now.
+- Admin → Analytics: average time per visit, average time per recipe, and
+  optionally how many readers reach the recipe card / product links.
+- Only counts visits after it ships; no backfill possible.
+
 ## Housekeeping
 - **TikTok sync, Pi side** (`app/tiktok_sync.py`): cron every 3 hours
   (`15 */3 * * *`) and the "Sync from TikTok" button in Admin → Recipes. Reads the
