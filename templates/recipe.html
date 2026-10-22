@@ -20,7 +20,7 @@
     </div>
     <div class="post-actions">
       <a class="btn btn-ember" href="#recipe">Jump to Recipe ↓</a>
-      {% if video_ids %}<a class="btn btn-outline" href="#watch">Watch the Video</a>{% endif %}
+      {% if video_id %}<a class="btn btn-outline" href="#watch">Watch the Video</a>{% endif %}
       <a class="btn btn-outline" href="/recipe/{{ r.slug }}/print" rel="nofollow">Print Recipe</a>
     </div>
   </header>
@@ -36,21 +36,15 @@
       {% endfor %}
     </div>
 
-    {% if video_ids %}
+    {% if video_id %}
     <section id="watch" class="watch" aria-labelledby="watch-h">
       <h2 id="watch-h" class="watch-title">Watch the <em>cook</em></h2>
       <div class="watch-grid">
-        {% for vid in video_ids[:2] %}
         <div class="tiktok-frame">
-          <iframe src="https://www.tiktok.com/player/v1/{{ vid }}?description=0&music_info=0&rel=0" title="{{ r.title }} video {{ loop.index }}" loading="lazy" allow="encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>
+          <iframe src="https://www.tiktok.com/player/v1/{{ video_id }}?description=0&music_info=0&rel=0" title="{{ r.title }} video" loading="lazy" allow="encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>
         </div>
-        {% endfor %}
       </div>
-      {% if video_ids|length > 2 %}
-      <p class="watch-more">More from this cook:
-        {% for vid in video_ids[2:] %}<a href="https://www.tiktok.com/@dkcraftbbq/video/{{ vid }}" target="_blank" rel="noopener">part {{ loop.index + 2 }}</a>{{ ", " if not loop.last }}{% endfor %}
-      </p>
-      {% endif %}
+      <p class="watch-more"><a href="https://www.tiktok.com/@dkcraftbbq/video/{{ video_id }}" target="_blank" rel="noopener">Watch on TikTok</a></p>
     </section>
     {% endif %}
 
