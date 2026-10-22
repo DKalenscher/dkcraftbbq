@@ -225,16 +225,15 @@ def category_page(slug: str, request: Request, page: int = 1, db: Session = Depe
     return _listing(request, db, query, page, (name, "Recipes"), blurb, f"/category/{slug}")
 
 
-def _main_video(db: Session, ids: list) -> Optional[str]:
-    """The one video a recipe page shows: the longest of its videos that's in a TikTok
-    playlist (the full cook), or the longest of any if none are."""
-    if not ids:
-        return None
-    rows = db.query(models.Video).filter(models.Video.id.in_(ids)).all()
-    in_playlist = [v for v in rows if v.playlist] or rows
-    if not in_playlist:
-        return ids[0]
-    return max(in_playlist, key=lambda v: v.duration or 0).id
+def _recipe_videos(db: Session, ids: list) -> list:
+    """The videos a recipe page shows: every one of its videos that's in a TikTok playlist,
+    longest first. If none are, just the longest of its videos."""
+    rows = db.query(models.Video).filter(models.Video.id.in_(ids)).all() if ids else []
+    rows.sort(key=lambda v: v.duration or 0, reverse=True)
+    in_playlist = [v.id for v in rows if v.playlist]
+    if in_playlist:
+        return in_playlist
+    return [rows[0].id] if rows else ids[:1]
 
 
 @router.get("/recipe/{slug}", response_class=HTMLResponse)
@@ -251,7 +250,7 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
         .limit(4)
         .all()
     )
-    video_id = _main_video(db, json.loads(r.video_ids or "[]"))
+    video_ids = _recipe_videos(db, json.loads(r.video_ids or "[]"))
     ingredients = json.loads(r.ingredients or "[]")
     steps = json.loads(r.steps or "[]")
     schema = {
@@ -276,13 +275,13 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
     if r.method:
         schema["cookingMethod"] = r.method
     schema["keywords"] = f"{category_name(r.category)}, BBQ, DKCraftBBQ"
-    if video_id:
+    if video_ids:
         schema["video"] = {
             "@type": "VideoObject",
             "name": r.title,
             "description": r.summary,
             "thumbnailUrl": [SITE_URL + r.image] if r.image else [],
-            "embedUrl": f"https://www.tiktok.com/embed/v2/{video_id}",
+            "embedUrl": f"https://www.tiktok.com/embed/v2/{video_ids[0]}",
             "uploadDate": r.published_at.date().isoformat() if r.published_at else None,
         }
     return render("recipe.html", _ctx(
@@ -292,7 +291,7 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
         ingredients=ingredients,
         steps=steps,
         notes=json.loads(r.notes or "[]"),
-        video_id=video_id,
+        video_ids=video_ids,
         related=[_recipe_view(x) for x in related],
         schema=json.dumps(schema).replace("</", "<\\/"),
     ))
