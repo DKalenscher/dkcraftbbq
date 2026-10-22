@@ -227,13 +227,12 @@ def category_page(slug: str, request: Request, page: int = 1, db: Session = Depe
 
 def _recipe_videos(db: Session, ids: list) -> list:
     """The videos a recipe page shows: every one of its videos that's in a TikTok playlist,
-    longest first. If none are, just the longest of its videos."""
+    oldest first. If none are, just the longest of its videos."""
     rows = db.query(models.Video).filter(models.Video.id.in_(ids)).all() if ids else []
-    rows.sort(key=lambda v: v.duration or 0, reverse=True)
-    in_playlist = [v.id for v in rows if v.playlist]
+    in_playlist = sorted((v for v in rows if v.playlist), key=lambda v: v.posted_at or datetime.min)
     if in_playlist:
-        return in_playlist
-    return [rows[0].id] if rows else ids[:1]
+        return [v.id for v in in_playlist]
+    return [max(rows, key=lambda v: v.duration or 0).id] if rows else ids[:1]
 
 
 @router.get("/recipe/{slug}", response_class=HTMLResponse)
