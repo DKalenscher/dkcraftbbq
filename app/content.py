@@ -43,8 +43,10 @@ RENAMED_RECIPES = {
 # Admin can replace a recipe's automatic picks with its own (Recipe.gear_ids).
 GEAR_RULES = [
     ("holy cow", 25),            # Meat Church Holy Cow
+    ("the gospel", 47),          # Meat Church The Gospel (not Holy Gospel)
     ("honey hog", 29),           # Meat Church Honey Hog 2-Pack
     ("whomp", 33),               # Meat Mitch WHOMP!
+    ("bachan's", 48),            # Bachan's Japanese Barbecue Sauce
     ("curing salt", 6),          # SPQR Prague Powder #1
     ("pickling spice", 5),       # Badia pickling spice
     ("bear mountain", 11),       # Bear Mountain pellets
