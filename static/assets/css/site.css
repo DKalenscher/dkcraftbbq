@@ -60,7 +60,7 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
 .site-header { background: var(--paper); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 50; }
 .header-row { display: flex; align-items: center; gap: 24px; min-height: 84px; }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-.brand img { width: 56px; height: 56px; }
+.brand img { width: 56px; height: 56px; border-radius: 50%; }
 .brand-word { font: 400 30px/1 var(--brush); color: var(--charcoal); }
 .brand-dk, .brand-bbq { color: var(--ember); }
 .main-nav { display: flex; gap: 32px; margin-left: auto; }
@@ -270,7 +270,7 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
 .shop-title { font: 600 17px/1.35 var(--sans); color: var(--charcoal); }
 .shop-cta { font: 700 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ember); margin-top: auto; }
 .about { text-align: center; }
-.about-logo { margin: 0 auto 20px; }
+.about-logo { margin: 0 auto 20px; border-radius: 50%; }
 .about .prose { text-align: left; margin-top: 24px; }
 .about-stats { display: flex; justify-content: center; gap: 48px; margin: 28px 0; }
 .about-stats dt { font: 700 12px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--smoke); }
