@@ -283,6 +283,7 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
 .footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 32px; }
 .footer-brand img { margin-bottom: 14px; border-radius: 50%; }
 .footer-brand p { font-size: 16px; max-width: 32ch; margin: 0; }
+.site-footer .footer-email { margin-top: 10px; text-decoration: underline; }
 .footer-h { font: 700 13px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--cream); margin: 0 0 14px; }
 .site-footer nav a, .site-footer div > a { display: block; text-decoration: none; padding: 4px 0; font-size: 16px; }
 .site-footer a:hover { color: #e2574c; }
