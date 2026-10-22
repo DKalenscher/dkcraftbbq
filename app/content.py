@@ -33,6 +33,12 @@ LEGACY_CATEGORIES = {
 }
 
 
+# Old recipe addresses that moved; they 301 to the new slug
+RENAMED_RECIPES = {
+    "charcoal-grilled-wings-and-veggie-skewers-on-the-mill-scale-yakitori-grill": "charcoal-grilled-wings",
+}
+
+
 def normalize_category(slug: str) -> str:
     slug = LEGACY_CATEGORIES.get(slug, slug)
     return slug if slug in CATEGORIES else "more"

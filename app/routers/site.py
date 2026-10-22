@@ -11,7 +11,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from ..content import CATEGORIES, LEGACY_CATEGORIES, category_name
+from ..content import CATEGORIES, LEGACY_CATEGORIES, RENAMED_RECIPES, category_name
 from ..database import BASE_DIR, get_db
 from .. import models
 
@@ -226,6 +226,8 @@ def category_page(slug: str, request: Request, page: int = 1, db: Session = Depe
 
 @router.get("/recipe/{slug}", response_class=HTMLResponse)
 def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
+    if slug in RENAMED_RECIPES:
+        return RedirectResponse(f"/recipe/{RENAMED_RECIPES[slug]}", status_code=301)
     r = _published(db).filter(models.Recipe.slug == slug).first()
     if not r:
         raise HTTPException(status_code=404)
@@ -287,6 +289,8 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
 def recipe_print(slug: str, request: Request, db: Session = Depends(get_db)):
     """Just the recipe card, for printing. In-app browsers (TikTok, Instagram) ignore
     window.print(), so the page explains how to open it in a real browser there."""
+    if slug in RENAMED_RECIPES:
+        return RedirectResponse(f"/recipe/{RENAMED_RECIPES[slug]}/print", status_code=301)
     r = _published(db).filter(models.Recipe.slug == slug).first()
     if not r:
         raise HTTPException(status_code=404)
