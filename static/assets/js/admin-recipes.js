@@ -9,7 +9,9 @@
 
   let recipes = [];
   let categories = {};
+  let shop = [];
   let editing = null;
+  let gearPicked = null;   // null = automatic, else [link id] in the order picked
 
   async function api(method, path, body) {
     const res = await fetch(path, {
@@ -78,6 +80,7 @@
       const data = await api("GET", "/api/admin/recipes");
       recipes = data.recipes;
       categories = data.categories;
+      shop = data.shop || [];
       render();
     } catch (err) {
       $("#recipes-list").innerHTML = `<p style="padding:22px">Failed to load recipes: ${esc(err.message)}</p>`;
@@ -121,6 +124,32 @@
     loadSync();
   });
 
+  // ── Shop products on a recipe: automatic (from what the recipe mentions) or hand-picked
+  function renderGear() {
+    const auto = editing.auto_gear_ids || [];
+    const checked = new Set(gearPicked ?? auto);
+    const names = auto.map((id) => shop.find((l) => l.id === id)?.title).filter(Boolean);
+    $("#rf-gear-mode").innerHTML = gearPicked === null
+      ? `Automatic: ${names.length ? esc(names.join(", ")) : "nothing in the recipe matches a shop product"}. Tick or untick to choose your own.`
+      : `Hand-picked (${gearPicked.length} shown). <button type="button" id="rf-gear-reset">Go back to automatic</button>`;
+    let section = null;
+    $("#rf-gear").innerHTML = shop.map((l) => {
+      const head = l.section !== section ? `<h5>${esc((section = l.section))}</h5>` : "";
+      return `${head}<label><input type="checkbox" value="${l.id}" ${checked.has(l.id) ? "checked" : ""}>
+        ${l.image_url ? `<img src="${esc(l.image_url)}" alt="" loading="lazy">` : ""}
+        <span>${esc(l.title)}${auto.includes(l.id) ? ' <span class="gear-auto">(mentioned)</span>' : ""}</span></label>`;
+    }).join("");
+  }
+  $("#rf-gear").addEventListener("change", (e) => {
+    const id = Number(e.target.value);
+    if (gearPicked === null) gearPicked = [...(editing.auto_gear_ids || [])];
+    gearPicked = e.target.checked ? [...gearPicked.filter((x) => x !== id), id] : gearPicked.filter((x) => x !== id);
+    renderGear();
+  });
+  $("#rf-gear-mode").addEventListener("click", (e) => {
+    if (e.target.id === "rf-gear-reset") { gearPicked = null; renderGear(); }
+  });
+
   function openEditor(id) {
     editing = recipes.find((r) => r.id === id);
     if (!editing) return;
@@ -140,6 +169,8 @@
     $("#rf-review-box").innerHTML = editing.needs_review && editing.review_notes
       ? `<strong>What was filled in:</strong> ${esc(editing.review_notes)}` : "";
     $("#rf-review-box").hidden = !(editing.needs_review && editing.review_notes);
+    gearPicked = editing.gear_ids ? [...editing.gear_ids] : null;
+    renderGear();
     $("#recipe-modal-title").textContent = editing.title;
     $("#recipe-modal").classList.add("open");
   }
@@ -158,6 +189,7 @@
       needs_review: f.needs_review.checked,
       is_featured: f.is_featured.checked,
       is_published: f.is_published.checked,
+      gear_ids: gearPicked,
     };
     for (const k of ["prep_time", "cook_time", "total_time", "yield_text", "method", "wood"]) {
       body[k] = f[k].value.trim() || null;

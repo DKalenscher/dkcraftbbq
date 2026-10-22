@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DKCraftBBQ Admin</title>
-  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css?v=20261022a" />
   <meta name="robots" content="noindex, nofollow" />
   <!-- X-Frame-Options via meta as belt-and-suspenders -->
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
@@ -366,6 +366,11 @@
               <div class="form-group"><label>Method</label><input type="text" name="method"></div>
               <div class="form-group"><label>Wood</label><input type="text" name="wood"></div>
             </div>
+            <div class="form-group">
+              <label>Shop products on this recipe</label>
+              <p class="gear-mode" id="rf-gear-mode"></p>
+              <div class="gear-picker" id="rf-gear"></div>
+            </div>
             <div class="form-group"><label>Review notes (admin only)</label><textarea name="review_notes" rows="3"></textarea></div>
             <div class="recipe-checks">
               <label><input type="checkbox" name="needs_review"> Needs review</label>
@@ -544,6 +549,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="/assets/js/admin.js"></script>
-<script src="/assets/js/admin-recipes.js"></script>
+<script src="/assets/js/admin-recipes.js?v=20261022a"></script>
 </body>
 </html>

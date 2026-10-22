@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
-from ..content import CATEGORIES
+from ..content import CATEGORIES, GEAR_AUTO_LIMIT, auto_gear_ids
 from ..database import BASE_DIR, get_db
 from ..tiktok_sync import LOCK_FILE, STATUS_FILE
 from .. import models
@@ -39,12 +39,15 @@ class RecipeUpdate(BaseModel):
     review_notes: Optional[str] = None
     is_published: Optional[bool] = None
     is_featured: Optional[bool] = None
+    gear_ids: Optional[list[int]] = None   # null = pick automatically from the recipe text
 
 
 def _serialize(r: models.Recipe) -> dict:
     data = {c.name: getattr(r, c.name) for c in r.__table__.columns}
     for f in _JSON_FIELDS:
         data[f] = json.loads(data[f] or "[]")
+    data["gear_ids"] = json.loads(r.gear_ids) if r.gear_ids is not None else None
+    data["auto_gear_ids"] = auto_gear_ids(data["ingredients"], data["notes"], r.wood)[:GEAR_AUTO_LIMIT]
     for f in ("published_at", "created_at", "updated_at"):
         if isinstance(data[f], datetime):
             data[f] = data[f].isoformat()
@@ -54,7 +57,18 @@ def _serialize(r: models.Recipe) -> dict:
 @router.get("/recipes")
 def list_recipes(db: Session = Depends(get_db), _: models.AdminUser = Depends(get_current_user)):
     rows = db.query(models.Recipe).order_by(models.Recipe.published_at.desc()).all()
-    return {"categories": CATEGORIES, "recipes": [_serialize(r) for r in rows]}
+    shop = (
+        db.query(models.Link, models.Section.title)
+        .join(models.Section)
+        .filter(models.Link.is_visible == True)
+        .order_by(models.Section.order_index, models.Link.order_index)
+        .all()
+    )
+    return {
+        "categories": CATEGORIES,
+        "recipes": [_serialize(r) for r in rows],
+        "shop": [{"id": l.id, "title": l.title, "section": s, "image_url": l.image_url} for l, s in shop],
+    }
 
 
 @router.put("/recipes/{recipe_id}")
@@ -71,7 +85,11 @@ def update_recipe(
     if "category" in changes and changes["category"] not in CATEGORIES:
         raise HTTPException(status_code=400, detail="Unknown category")
     for field, value in changes.items():
-        setattr(recipe, field, json.dumps(value) if field in _JSON_FIELDS else value)
+        if field == "gear_ids":
+            value = None if value is None else json.dumps(value)
+        elif field in _JSON_FIELDS:
+            value = json.dumps(value)
+        setattr(recipe, field, value)
     db.commit()
     db.refresh(recipe)
     return _serialize(recipe)

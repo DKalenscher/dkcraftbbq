@@ -875,3 +875,13 @@ textarea { resize: vertical; min-height: 80px; }
 .insight-grid td a { color: inherit; text-decoration: none; }
 .insight-grid td a:hover { text-decoration: underline; }
 @media (max-width: 900px) { .insight-grid, .insight-grid-2 { grid-template-columns: 1fr; } }
+
+/* Recipe editor: shop product picker */
+.gear-mode { font-size: 0.85rem; margin: 0 0 8px; opacity: .85; }
+.gear-mode button { background: none; border: 0; padding: 0; color: var(--primary, #e25822); text-decoration: underline; cursor: pointer; font: inherit; }
+.gear-picker { max-height: 260px; overflow: auto; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 6px 12px; }
+.gear-picker h5 { margin: 10px 0 4px; font-size: 0.72rem; letter-spacing: .1em; text-transform: uppercase; opacity: .7; }
+.gear-picker label { display: flex; gap: 8px; align-items: center; text-transform: none; letter-spacing: 0; font-size: 0.88rem; color: var(--text); padding: 3px 0; cursor: pointer; }
+.gear-picker input { width: auto; }
+.gear-picker img { width: 28px; height: 28px; object-fit: contain; background: #fff; border-radius: 4px; flex: none; }
+.gear-picker .gear-auto { font-size: 0.72rem; opacity: .6; }

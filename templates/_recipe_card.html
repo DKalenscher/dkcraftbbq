@@ -1,4 +1,6 @@
 {# Recipe card, shared by the recipe page and its print page #}
+{% set gear = [] if printing or gear is not defined else gear %}
+{% set gmap = {} if printing or gear_by_item is not defined else gear_by_item %}
 <section id="recipe" class="recipe-card" aria-labelledby="rc-title">
   <div class="rc-head">
     {% if r.image %}<img class="rc-img" src="{{ r.image }}" alt="" loading="{{ 'eager' if printing else 'lazy' }}">{% endif %}
@@ -19,7 +21,7 @@
       <h3>Ingredients</h3>
       {% for g in ingredients %}
         {% if g.group %}<h4>{{ g.group }}</h4>{% endif %}
-        <ul>{% for i in g['items'] %}<li><label><input type="checkbox"> <span>{{ i }}</span></label></li>{% endfor %}</ul>
+        <ul>{% for i in g['items'] %}<li><label><input type="checkbox"> <span>{{ i }}</span></label>{% if gmap.get(i) %} <a class="rc-buy" href="{{ gmap[i].url }}" target="_blank" rel="noopener sponsored" data-link-id="{{ gmap[i].id }}" title="{{ gmap[i].title }}">Get it</a>{% endif %}</li>{% endfor %}</ul>
       {% endfor %}
     </div>
     <div class="rc-steps">
@@ -32,6 +34,20 @@
     <h3>Pitmaster Notes</h3>
     <ul>{% for n in notes %}<li>{{ n }}</li>{% endfor %}</ul>
   </div>
+  {% endif %}
+  {% if gear %}
+  <aside class="rc-gear" aria-labelledby="rc-gear-h">
+    <h3 id="rc-gear-h">From this cook</h3>
+    <ul>
+      {% for l in gear %}
+      <li><a href="{{ l.url }}" target="_blank" rel="noopener sponsored" data-link-id="{{ l.id }}">
+        {% if l.image_url %}<img src="{{ l.image_url }}" alt="" loading="lazy">{% endif %}
+        <span>{{ l.title }}</span>
+      </a></li>
+      {% endfor %}
+    </ul>
+  </aside>
+  <p class="rc-disclose">Product links are things I actually used. As an Amazon Associate I earn from qualifying purchases.</p>
   {% endif %}
   <p class="rc-foot">Times and temps are my starting points. Every cooker and every cut runs a little different, so cook to temperature and feel, not the clock.</p>
 </section>

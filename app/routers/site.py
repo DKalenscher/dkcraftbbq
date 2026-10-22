@@ -12,7 +12,10 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from ..content import CATEGORIES, LEGACY_CATEGORIES, RENAMED_RECIPES, category_name
+from ..content import (
+    CATEGORIES, GEAR_AUTO_LIMIT, LEGACY_CATEGORIES, RENAMED_RECIPES, auto_gear_ids, category_name,
+    gear_item_links,
+)
 from ..database import BASE_DIR, get_db
 from .. import models
 
@@ -225,6 +228,21 @@ def category_page(slug: str, request: Request, page: int = 1, db: Session = Depe
     return _listing(request, db, query, page, (name, "Recipes"), blurb, f"/category/{slug}")
 
 
+def _recipe_gear(db: Session, r: models.Recipe, ingredients: list, notes: list):
+    """Shop products for the recipe card: the ones picked in admin, or else the ones the recipe
+    mentions. Returns (products, {ingredient line: product}) for the box and the inline links."""
+    if r.gear_ids is not None:
+        ids = json.loads(r.gear_ids)
+    else:
+        ids = auto_gear_ids(ingredients, notes, r.wood)
+    found = {l.id: l for l in db.query(models.Link).filter(models.Link.id.in_(ids), models.Link.is_visible == True).all()} if ids else {}
+    gear = [found[i] for i in ids if i in found]
+    if r.gear_ids is None:
+        gear = gear[:GEAR_AUTO_LIMIT]
+    shown = {l.id: l for l in gear}
+    return gear, {item: shown[i] for item, i in gear_item_links(ingredients, list(shown)).items()}
+
+
 def _recipe_videos(db: Session, ids: list) -> list:
     """The videos a recipe page shows: every one of its videos that's in a TikTok playlist,
     oldest first. If none are, just the longest of its videos."""
@@ -252,6 +270,8 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
     video_ids = _recipe_videos(db, json.loads(r.video_ids or "[]"))
     ingredients = json.loads(r.ingredients or "[]")
     steps = json.loads(r.steps or "[]")
+    notes = json.loads(r.notes or "[]")
+    gear, gear_by_item = _recipe_gear(db, r, ingredients, notes)
     schema = {
         "@context": "https://schema.org",
         "@type": "Recipe",
@@ -289,7 +309,9 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
         cat_name=category_name(r.category),
         ingredients=ingredients,
         steps=steps,
-        notes=json.loads(r.notes or "[]"),
+        notes=notes,
+        gear=gear,
+        gear_by_item=gear_by_item,
         video_ids=video_ids,
         related=[_recipe_view(x) for x in related],
         schema=json.dumps(schema).replace("</", "<\\/"),

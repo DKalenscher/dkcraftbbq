@@ -38,6 +38,44 @@ RENAMED_RECIPES = {
     "charcoal-grilled-wings-and-veggie-skewers-on-the-mill-scale-yakitori-grill": "charcoal-grilled-wings",
 }
 
+# Shop products a recipe links to when its ingredients, wood or notes mention them.
+# (phrase to look for, lowercase) -> Link id in the shop. Rule order is display order.
+# Admin can replace a recipe's automatic picks with its own (Recipe.gear_ids).
+GEAR_RULES = [
+    ("holy cow", 25),            # Meat Church Holy Cow
+    ("honey hog", 29),           # Meat Church Honey Hog 2-Pack
+    ("whomp", 33),               # Meat Mitch WHOMP!
+    ("curing salt", 6),          # SPQR Prague Powder #1
+    ("pickling spice", 5),       # Badia pickling spice
+    ("bear mountain", 11),       # Bear Mountain pellets
+    ("smokin' pecan", 12),       # Smokin' Pecan pellets
+    ("smoke tube", 15),          # LIZZQ smoke tubes
+    ("thermopop", 9),            # ThermoPop 2
+    ("porter road", 24),
+    ("snake river", 23),
+]
+GEAR_AUTO_LIMIT = 4
+
+
+def auto_gear_ids(ingredients: list, notes: list, wood) -> list:
+    """Shop Link ids the recipe text mentions, per GEAR_RULES (before the limit)."""
+    text = "\n".join([i for g in ingredients for i in g.get("items", [])] + notes + [wood or ""]).lower()
+    ids = []
+    for phrase, link_id in GEAR_RULES:
+        if phrase in text and link_id not in ids:
+            ids.append(link_id)
+    return ids
+
+
+def gear_item_links(ingredients: list, ids: list) -> dict:
+    """{ingredient line: Link id} for ingredient lines that name one of the given products."""
+    out = {}
+    for item in (i for g in ingredients for i in g.get("items", [])):
+        for phrase, link_id in GEAR_RULES:
+            if link_id in ids and phrase in item.lower():
+                out.setdefault(item, link_id)
+    return out
+
 
 def normalize_category(slug: str) -> str:
     slug = LEGACY_CATEGORIES.get(slug, slug)
@@ -55,6 +93,7 @@ _ADDED_COLUMNS = [
     ("page_views", "path", "VARCHAR(300)"),
     ("page_views", "search", "VARCHAR(200)"),
     ("page_views", "search_results", "INTEGER"),
+    ("recipes", "gear_ids", "TEXT"),
 ]
 
 
