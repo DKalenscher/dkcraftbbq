@@ -81,7 +81,8 @@ def auto_gear_ids(ingredients: list, notes: list, wood, method=None, slug=None) 
         if phrase in text and link_id not in ids:
             ids.append(link_id)
     how = (method or "").lower()
-    hot = bool(how) and "cold smoke" not in how and how != "rub"
+    cold_only = "cold smok" in how and "smok" not in how.replace("cold smok", "")
+    hot = bool(how) and not cold_only and how != "rub"
     if hot and "smok" in how and GEAR_SMOKE_PELLETS not in ids:
         ids.append(GEAR_SMOKE_PELLETS)
     if hot and slug not in NO_THERMOMETER and GEAR_THERMOMETER not in ids:
