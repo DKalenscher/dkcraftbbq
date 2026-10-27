@@ -124,10 +124,13 @@ templates.env.filters["fromjson"] = lambda s: json.loads(s or "[]")
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
     latest = _published(db).order_by(models.Recipe.published_at.desc())
-    featured = latest.filter(models.Recipe.is_featured == True).limit(4).all()
+    # The big top slot is always the newest recipe; the three beside it are the newest
+    # ones ticked "Featured on home page" (topped up with the newest others if needed).
+    newest = latest.first()
+    featured = [newest] if newest else []
+    featured += [r for r in latest.filter(models.Recipe.is_featured == True).limit(4).all() if r not in featured][:3]
     if len(featured) < 4:
-        taken = {r.id for r in featured}
-        featured += [r for r in latest.limit(8).all() if r.id not in taken][: 4 - len(featured)]
+        featured += [r for r in latest.limit(8).all() if r not in featured][: 4 - len(featured)]
     featured_ids = {r.id for r in featured}
 
     popular = _published(db).order_by(models.Recipe.views.desc()).limit(4).all()
