@@ -3,7 +3,7 @@
 {% block title %}{{ r.title }} | DKCraftBBQ{% endblock %}
 {% block description %}{{ r.summary }}{% endblock %}
 {% block og_image %}{% if r.image %}<meta property="og:image" content="{{ site_url }}{{ r.image }}">{% endif %}{% endblock %}
-{% block head %}<script type="application/ld+json">{{ schema|safe }}</script>{% endblock %}
+{% block head %}{% if schema %}<script type="application/ld+json">{{ schema|safe }}</script>{% endif %}{% endblock %}
 {% block content %}
 <article class="post">
   <header class="post-head wrap-narrow">
@@ -19,9 +19,10 @@
       {% if r.views %}<span>{{ r.views|views }} video views</span>{% endif %}
     </div>
     <div class="post-actions">
-      <a class="btn btn-ember" href="#recipe">Jump to Recipe ↓</a>
+      {% if has_card %}<a class="btn btn-ember" href="#recipe">Jump to Recipe ↓</a>
+      {% elif made_with %}<a class="btn btn-ember" href="#made-with">See the Recipes ↓</a>{% endif %}
       {% if video_ids %}<a class="btn btn-outline" href="#watch">Watch the Video</a>{% endif %}
-      <a class="btn btn-outline" href="/recipe/{{ r.slug }}/print" rel="nofollow">Print Recipe</a>
+      {% if has_card %}<a class="btn btn-outline" href="/recipe/{{ r.slug }}/print" rel="nofollow">Print Recipe</a>{% endif %}
     </div>
   </header>
 
@@ -52,7 +53,18 @@
     </section>
     {% endif %}
 
-    {% include "_recipe_card.html" %}
+    {% if has_card %}
+      {% include "_recipe_card.html" %}
+    {% else %}
+      {% if made_with %}
+      <section id="made-with" class="made-with" aria-labelledby="made-with-h">
+        <h2 id="made-with-h" class="watch-title">Made <em>with</em></h2>
+        <p class="made-with-sub">Everything in this one has its own recipe.</p>
+        <div class="grid grid-{{ 3 if made_with|length > 2 else 2 }}">{% for x in made_with %}{{ card(x, show_summary=True) }}{% endfor %}</div>
+      </section>
+      {% endif %}
+      {% if gear %}<div class="gear-standalone">{% include "_gear.html" %}</div>{% endif %}
+    {% endif %}
   </div>
 
   {% if related %}

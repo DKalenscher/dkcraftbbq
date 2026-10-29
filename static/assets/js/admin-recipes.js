@@ -163,6 +163,7 @@
     f.ingredients.value = ingredientsToText(editing.ingredients);
     f.steps.value = editing.steps.join("\n");
     f.notes.value = editing.notes.join("\n");
+    f.made_with.value = (editing.made_with || []).join("\n");
     f.needs_review.checked = editing.needs_review;
     f.is_featured.checked = editing.is_featured;
     f.is_published.checked = editing.is_published;
@@ -185,6 +186,7 @@
       ingredients: textToIngredients(f.ingredients.value),
       steps: lines(f.steps.value),
       notes: lines(f.notes.value),
+      made_with: lines(f.made_with.value).map((s) => s.replace(/^.*\/recipe\//, "").replace(/[/?#].*$/, "")),
       review_notes: f.review_notes.value.trim() || null,
       needs_review: f.needs_review.checked,
       is_featured: f.is_featured.checked,

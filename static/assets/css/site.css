@@ -260,6 +260,13 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
 }
 .rc-gear a:hover { border-color: var(--ember); color: var(--ember); }
 .rc-gear img { width: 44px; height: 44px; object-fit: contain; background: #fff; border-radius: 4px; flex: none; }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.made-with { margin: 40px 0; }
+.made-with .watch-title { text-align: center; }
+.made-with-sub { text-align: center; color: var(--smoke); margin: -10px 0 24px; }
+.gear-standalone { margin: 40px 0; }
+.gear-standalone .rc-gear { border-top: 0; padding-top: 0; }
+.gear-standalone .rc-gear h3 { font: 700 22px var(--serif); color: var(--charcoal); margin: 0 0 12px; border-bottom: 2px solid var(--ember); display: inline-block; padding-bottom: 4px; }
 .rc-disclose { font-size: 12px; color: var(--smoke); margin: 10px 0 0; }
 .rc-foot { font-size: 14px; color: var(--smoke); margin: 20px 0 0; font-style: italic; }
 

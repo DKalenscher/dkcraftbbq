@@ -134,6 +134,7 @@ class Recipe(Base):
     is_published = Column(Boolean, nullable=False, default=True)
     is_featured = Column(Boolean, nullable=False, default=False)
     in_playlist = Column(Boolean, nullable=False, default=True)  # set by the TikTok sync
+    made_with = Column(Text, nullable=False, default="[]")  # JSON: [recipe slug] this dish is built from
     gear_ids = Column(Text, nullable=True)  # JSON: [shop Link id] picked in admin; null = automatic
     published_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=func.now())

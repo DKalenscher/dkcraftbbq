@@ -17,7 +17,7 @@ from .. import models
 
 router = APIRouter(prefix="/api/admin", tags=["admin-recipes"])
 
-_JSON_FIELDS = ("ingredients", "steps", "notes", "video_ids")
+_JSON_FIELDS = ("ingredients", "steps", "notes", "video_ids", "made_with")
 
 
 class RecipeUpdate(BaseModel):
@@ -39,6 +39,7 @@ class RecipeUpdate(BaseModel):
     review_notes: Optional[str] = None
     is_published: Optional[bool] = None
     is_featured: Optional[bool] = None
+    made_with: Optional[list[str]] = None  # slugs of the recipes this dish is built from
     gear_ids: Optional[list[int]] = None   # null = pick automatically from the recipe text
 
 

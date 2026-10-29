@@ -275,6 +275,11 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
     steps = json.loads(r.steps or "[]")
     notes = json.loads(r.notes or "[]")
     gear, gear_by_item = _recipe_gear(db, r, ingredients, notes)
+    # A dish built from other recipes (e.g. a sandwich) links to them instead of having its own card
+    made_slugs = json.loads(r.made_with or "[]")
+    made_rows = {x.slug: x for x in _published(db).filter(models.Recipe.slug.in_(made_slugs)).all()} if made_slugs else {}
+    made_with = [_recipe_view(made_rows[s]) for s in made_slugs if s in made_rows]
+    has_card = bool(ingredients or steps)
     schema = {
         "@context": "https://schema.org",
         "@type": "Recipe",
@@ -306,6 +311,9 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
             "embedUrl": f"https://www.tiktok.com/embed/v2/{video_ids[0]}",
             "uploadDate": r.published_at.date().isoformat() if r.published_at else None,
         }
+    if not has_card:
+        # Not a Recipe to Google without ingredients and steps; just describe the video
+        schema = {"@context": "https://schema.org", **schema["video"]} if video_ids else None
     return render("recipe.html", _ctx(
         request, db,
         r=r,
@@ -313,11 +321,13 @@ def recipe_page(slug: str, request: Request, db: Session = Depends(get_db)):
         ingredients=ingredients,
         steps=steps,
         notes=notes,
+        has_card=has_card,
+        made_with=made_with,
         gear=gear,
         gear_by_item=gear_by_item,
         video_ids=video_ids,
         related=[_recipe_view(x) for x in related],
-        schema=json.dumps(schema).replace("</", "<\\/"),
+        schema=json.dumps(schema).replace("</", "<\\/") if schema else None,
     ))
 
 
@@ -330,6 +340,8 @@ def recipe_print(slug: str, request: Request, db: Session = Depends(get_db)):
     r = _published(db).filter(models.Recipe.slug == slug).first()
     if not r:
         raise HTTPException(status_code=404)
+    if not json.loads(r.steps or "[]") and not json.loads(r.ingredients or "[]"):
+        return RedirectResponse(f"/recipe/{slug}", status_code=302)  # nothing to print
     return render("recipe_print.html", _ctx(
         request, db,
         r=r,

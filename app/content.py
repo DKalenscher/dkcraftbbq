@@ -117,6 +117,7 @@ _ADDED_COLUMNS = [
     ("page_views", "search", "VARCHAR(200)"),
     ("page_views", "search_results", "INTEGER"),
     ("recipes", "gear_ids", "TEXT"),
+    ("recipes", "made_with", "TEXT NOT NULL DEFAULT '[]'"),
 ]
 
 

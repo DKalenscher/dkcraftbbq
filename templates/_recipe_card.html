@@ -35,19 +35,6 @@
     <ul>{% for n in notes %}<li>{{ n }}</li>{% endfor %}</ul>
   </div>
   {% endif %}
-  {% if gear %}
-  <aside class="rc-gear" aria-labelledby="rc-gear-h">
-    <h3 id="rc-gear-h">From this cook</h3>
-    <ul>
-      {% for l in gear %}
-      <li><a href="{{ l.url }}" target="_blank" rel="noopener sponsored" data-link-id="{{ l.id }}">
-        {% if l.image_url %}<img src="{{ l.image_url }}" alt="" loading="lazy">{% endif %}
-        <span>{{ l.title }}</span>
-      </a></li>
-      {% endfor %}
-    </ul>
-  </aside>
-  <p class="rc-disclose">Product links are things I actually used. As an Amazon Associate I earn from qualifying purchases.</p>
-  {% endif %}
+  {% include "_gear.html" %}
   <p class="rc-foot">Times and temps are my starting points. Every cooker and every cut runs a little different, so cook to temperature and feel, not the clock.</p>
 </section>
