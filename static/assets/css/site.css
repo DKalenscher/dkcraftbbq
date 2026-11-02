@@ -176,8 +176,7 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
 .video-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease, opacity .2s; }
 .video-tile:hover img { transform: scale(1.04); opacity: .85; }
 .video-tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 50%, rgb(0 0 0 / 75%)); }
-.review-shop { display: block; margin-top: 10px; font: 700 13px/1.35 var(--sans); color: var(--ember); text-decoration: none; }
-.review-shop:hover { text-decoration: underline; }
+.review-shop { width: 100%; margin-top: 12px; padding: 14px 12px; line-height: 1.3; text-align: center; }
 .play {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1;
   width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center;
@@ -224,10 +223,10 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
 .rc-title { font: 700 32px/1.15 var(--serif); margin: 0 0 8px; color: var(--charcoal); }
 .rc-summary { color: var(--smoke); margin: 0 0 14px; font-size: 17px; }
 .rc-facts {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  display: flex; flex-wrap: wrap; gap: 1px;
   margin: 28px 0; background: var(--line); border-block: 1px solid var(--line);
 }
-.rc-facts div { padding: 14px 10px; text-align: center; background: var(--paper); }
+.rc-facts div { flex: 1 1 calc(33.33% - 1px); padding: 14px 10px; text-align: center; background: var(--paper); }
 .rc-facts dt { font: 700 12px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--smoke); margin-bottom: 6px; }
 .rc-facts dd { margin: 0; font: 700 17px/1.3 var(--serif); color: var(--charcoal); }
 .rc-cols { display: grid; grid-template-columns: 1fr 1.4fr; gap: 36px; }
@@ -355,8 +354,7 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
   .recipe-card { padding: 20px 16px; }
   .rc-head { grid-template-columns: 1fr; text-align: center; }
   .rc-img { margin: 0 auto; width: 140px; }
-  .rc-facts { grid-template-columns: repeat(2, 1fr); }
-  .rc-facts div { padding: 10px 4px; }
+  .rc-facts div { flex-basis: calc(50% - 1px); padding: 10px 4px; }
   .footer-grid { grid-template-columns: 1fr; }
   .post-meta span + span::before { margin-right: 10px; }
   .finder { padding: 44px 0; }

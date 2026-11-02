@@ -10,7 +10,7 @@
     {% for r in reviews %}
     <div class="review">
       {{ video_tile(r.video) }}
-      {% if r.link %}<a class="review-shop" href="{{ r.link.url }}" target="_blank" rel="noopener sponsored" data-link-id="{{ r.link.id }}">Shop: {{ r.link.title }} →</a>{% endif %}
+      {% if r.link %}<a class="btn btn-ember review-shop" href="{{ r.link.url }}" target="_blank" rel="noopener sponsored" data-link-id="{{ r.link.id }}">Shop {{ r.link.title }}</a>{% endif %}
     </div>
     {% endfor %}
   </div>
