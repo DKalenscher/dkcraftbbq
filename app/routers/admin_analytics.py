@@ -42,7 +42,7 @@ IN_APP_BROWSERS = [
     (("Snapchat",), "Snapchat"),
     (("Pinterest",), "Pinterest"),
 ]
-UTM_NAMES = {"reddit": "Reddit", "ig": "Instagram", "instagram": "Instagram", "tiktok": "TikTok",
+UTM_NAMES = {"reddit": "Reddit", "pinterest": "Pinterest", "ig": "Instagram", "instagram": "Instagram", "tiktok": "TikTok",
              "fb": "Facebook", "facebook": "Facebook", "yt": "YouTube", "youtube": "YouTube"}
 
 
