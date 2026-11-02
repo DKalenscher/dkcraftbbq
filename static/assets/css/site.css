@@ -176,7 +176,9 @@ svg .fill, .play svg, .card-views svg { fill: currentColor; stroke: none; }
 .video-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease, opacity .2s; }
 .video-tile:hover img { transform: scale(1.04); opacity: .85; }
 .video-tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 50%, rgb(0 0 0 / 75%)); }
-.review-shop { width: 100%; margin-top: 12px; padding: 14px 12px; line-height: 1.3; text-align: center; }
+.review { display: flex; flex-direction: column; }
+.review-shop { width: 100%; flex: 1; min-height: 68px; margin-top: 12px; padding: 14px 12px; line-height: 1.3; text-align: center; }
+@media (max-width: 380px) { .review-shop { min-height: 87px; } }
 .play {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1;
   width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center;
