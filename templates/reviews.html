@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_macros.html" import heading, video_tile %}
+{% block title %}Product Reviews | DKCraftBBQ{% endblock %}
+{% block description %}BBQ gear and products tried on camera by DKCraftBBQ.{% endblock %}
+{% block content %}
+<section class="wrap block">
+  {{ heading(("Product", "Reviews"), tag="h1") }}
+  <p class="sec-blurb">Gear and products I've tried on camera, including samples brands sent me to test. Tap any video to watch it on TikTok.</p>
+  <div class="grid grid-4 video-grid">
+    {% for r in reviews %}
+    <div class="review">
+      {{ video_tile(r.video) }}
+      {% if r.link %}<a class="review-shop" href="{{ r.link.url }}" target="_blank" rel="noopener sponsored" data-link-id="{{ r.link.id }}">Shop: {{ r.link.title }} →</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <p class="rc-disclose">Some links are affiliate links. As an Amazon Associate I earn from qualifying purchases.</p>
+</section>
+{% endblock %}

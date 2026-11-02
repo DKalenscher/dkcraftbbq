@@ -30,7 +30,7 @@ from pathlib import Path
 import httpx
 
 from .config import get_settings
-from .content import CATEGORIES, PLAYLIST_CATEGORIES, migrate_db
+from .content import CATEGORIES, PLAYLIST_CATEGORIES, REVIEWS_PLAYLIST, migrate_db
 from .database import SessionLocal, _UPLOAD_DIR, engine
 from . import models
 
@@ -367,10 +367,15 @@ def sync(dry: bool = False) -> dict:
         playlists = fetch_playlists(client, _sec_uid(client, db))
         in_playlist: dict[str, str] = {}   # video id -> category
         playlist_posts: dict[str, dict] = {}
+        review_ids: set[str] = set()       # Reviews page only, never a recipe
         for p in playlists:
+            is_reviews = p["name"].strip().lower() == REVIEWS_PLAYLIST
             for item in p["items"]:
                 post = _item_post(item)
-                in_playlist.setdefault(post["id"], p["category"])
+                if is_reviews:
+                    review_ids.add(post["id"])
+                else:
+                    in_playlist.setdefault(post["id"], p["category"])
                 playlist_posts[post["id"]] = post
         log.info("playlists: %s", ", ".join(f"{p['name']} ({len(p['items'])})" for p in playlists))
 
@@ -383,6 +388,8 @@ def sync(dry: bool = False) -> dict:
         if not dry:
             db.query(models.Video).filter(models.Video.id.notin_(list(in_playlist))).update(
                 {models.Video.playlist: None}, synchronize_session=False)
+            db.query(models.Video).update(
+                {models.Video.is_review: models.Video.id.in_(list(review_ids))}, synchronize_session=False)
             db.commit()
 
         # Existing recipes: visibility and category follow the playlists

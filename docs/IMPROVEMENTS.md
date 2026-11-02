@@ -60,6 +60,9 @@ stays (about 80% of visits are a single page). Plan:
   branch `v1-fallback` so pushes never change it.
 
 ## Done
+- 2026-11-02 — Reviews page (`/reviews`): shows the TikTok "Product Spotlights" playlist
+  (`REVIEWS_PLAYLIST`), never drafted as recipes. A caption naming a product in `GEAR_RULES`
+  gets a shop link under its tile; videos with no caption stay off the page.
 - 2026-10-21 — Analytics insights: Top Recipes (views per visit, prints), Top
   Searches (with a "0 results" flag for recipes people want but the site lacks)
   and Top Products (shop clicks), on the dashboard (30 days) and Analytics page

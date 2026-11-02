@@ -24,6 +24,9 @@ CATEGORIES = {
 # TikTok playlist name (lowercased) -> category slug. Unknown playlists go to "more".
 PLAYLIST_CATEGORIES = {"beef": "beef", "pork": "pork", "poultry": "poultry", "and more!": "more"}
 
+# TikTok playlist (lowercased) whose videos go on the Reviews page. They aren't recipes.
+REVIEWS_PLAYLIST = "product spotlights"
+
 # Categories from before the playlists, mapped to the closest current one.
 LEGACY_CATEGORIES = {
     "pastrami-cured": "beef",
@@ -58,6 +61,8 @@ GEAR_RULES = [
     ("thermopop", 9),            # ThermoPop 2
     ("porter road", 24),
     ("snake river", 23),
+    ("havenity", 59),            # Havenity BBQ Prep Tub
+    ("crocodile cloth", 60),     # Crocodile Cloth Grill wipes
 ]
 GEAR_AUTO_LIMIT = 6
 
@@ -100,6 +105,12 @@ def gear_item_links(ingredients: list, ids: list) -> dict:
     return out
 
 
+def review_link_id(caption: str):
+    """Shop Link id of the product a review video's caption names, if any."""
+    text = (caption or "").lower()
+    return next((link_id for phrase, link_id in GEAR_RULES if phrase in text), None)
+
+
 def normalize_category(slug: str) -> str:
     slug = LEGACY_CATEGORIES.get(slug, slug)
     return slug if slug in CATEGORIES else "more"
@@ -118,6 +129,7 @@ _ADDED_COLUMNS = [
     ("page_views", "search_results", "INTEGER"),
     ("recipes", "gear_ids", "TEXT"),
     ("recipes", "made_with", "TEXT NOT NULL DEFAULT '[]'"),
+    ("videos", "is_review", "BOOLEAN NOT NULL DEFAULT 0"),
 ]
 
 

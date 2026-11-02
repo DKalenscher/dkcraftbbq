@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from ..content import (
     CATEGORIES, GEAR_AUTO_LIMIT, LEGACY_CATEGORIES, RENAMED_RECIPES, auto_gear_ids, category_name,
-    gear_item_links,
+    gear_item_links, review_link_id,
 )
 from ..database import BASE_DIR, get_db
 from .. import models
@@ -359,6 +359,16 @@ def videos_page(request: Request, db: Session = Depends(get_db)):
     return render("videos.html", _ctx(request, db, videos=videos))
 
 
+@router.get("/reviews", response_class=HTMLResponse)
+def reviews_page(request: Request, db: Session = Depends(get_db)):
+    videos = (db.query(models.Video)
+              .filter(models.Video.is_review == True, models.Video.caption != "")
+              .order_by(models.Video.posted_at.desc()).all())
+    links = {l.id: l for l in db.query(models.Link).filter(models.Link.is_visible == True)}
+    reviews = [{"video": v, "link": links.get(review_link_id(v.caption))} for v in videos]
+    return render("reviews.html", _ctx(request, db, reviews=reviews))
+
+
 @router.get("/shop", response_class=HTMLResponse)
 def shop_page(request: Request, db: Session = Depends(get_db)):
     sections = (
@@ -415,10 +425,11 @@ def sitemap(db: Session = Depends(get_db)):
     changed = {r.slug: r.published_at for r in recipes}
     newest = max(filter(None, changed.values()), default=None)
     newest_video = db.query(func.max(models.Video.posted_at)).scalar()
+    newest_review = db.query(func.max(models.Video.posted_at)).filter(models.Video.is_review == True).scalar()
     newest_link = db.query(func.max(models.Link.updated_at)).scalar()
 
     urls = [("/", day(newest)), ("/recipes", day(newest)), ("/videos", day(newest_video)),
-            ("/shop", day(newest_link)), ("/about", None)]
+            ("/reviews", day(newest_review)), ("/shop", day(newest_link)), ("/about", None)]
     for c in CATEGORIES:
         in_cat = [changed[r.slug] for r in recipes if r.category == c and changed[r.slug]]
         urls.append((f"/category/{c}", day(max(in_cat, default=None))))

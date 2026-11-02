@@ -153,3 +153,4 @@ class Video(Base):
     likes = Column(Integer, nullable=False, default=0)
     recipe_slug = Column(String(200), nullable=True, index=True)
     playlist = Column(String(100), nullable=True)                # category slug of its TikTok playlist
+    is_review = Column(Boolean, nullable=False, default=False)   # in the TikTok reviews playlist
