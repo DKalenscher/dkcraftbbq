@@ -27,6 +27,8 @@ SOURCE_NAMES = {
     "x.com": "X / Twitter",
     "youtube.com": "YouTube",
     "reddit.com": "Reddit",
+    "com.reddit.frontpage": "Reddit",   # Reddit's Android app
+    "com.google.android.googlequicksearchbox": "Google",   # Google's Android app
     "pinterest.com": "Pinterest",
     "linktr.ee": "Linktree",
 }
@@ -40,7 +42,7 @@ IN_APP_BROWSERS = [
     (("Snapchat",), "Snapchat"),
     (("Pinterest",), "Pinterest"),
 ]
-UTM_NAMES = {"ig": "Instagram", "instagram": "Instagram", "tiktok": "TikTok",
+UTM_NAMES = {"reddit": "Reddit", "ig": "Instagram", "instagram": "Instagram", "tiktok": "TikTok",
              "fb": "Facebook", "facebook": "Facebook", "yt": "YouTube", "youtube": "YouTube"}
 
 
@@ -190,10 +192,13 @@ def get_traffic_sources(
     )
     # One source per visit: the first page view that came from outside the site
     # (by UTM tag, outside referrer, or an app's built-in browser).
-    # A visit with no outside referrer counts as Direct.
+    # A visit with no outside referrer counts as Direct, unless it starts on a click
+    # from this site (a tab reopened after 30 idle minutes), which has no source at all.
     first: dict[str, str] = {}
     for r in rows:
         label = _source_label(r.utm_source, r.referrer, r.user_agent)
+        if label == "Direct" and _is_internal(r.referrer) and r.visit not in first:
+            continue
         if r.visit not in first or (first[r.visit] == "Direct" and label != "Direct"):
             first[r.visit] = label
     counts: dict[str, int] = {}

@@ -2,13 +2,17 @@
   "use strict";
 
   // ── Session + UTM (same shape the v1 link page sends, so analytics stay continuous)
+  // One visit spans every tab until 30 minutes pass with no page view.
+  const VISIT_IDLE_MS = 30 * 60 * 1000;
   let SESSION_ID = null;
   try {
-    SESSION_ID = sessionStorage.getItem("bbq_sid");
-    if (!SESSION_ID) {
+    SESSION_ID = localStorage.getItem("bbq_sid");
+    const seen = Number(localStorage.getItem("bbq_seen"));
+    if (!SESSION_ID || Date.now() - seen > VISIT_IDLE_MS) {
       SESSION_ID = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
-      sessionStorage.setItem("bbq_sid", SESSION_ID);
+      localStorage.setItem("bbq_sid", SESSION_ID);
     }
+    localStorage.setItem("bbq_seen", String(Date.now()));
   } catch (_) { /* storage blocked — track without a session id */ }
 
   const params = new URLSearchParams(location.search);
